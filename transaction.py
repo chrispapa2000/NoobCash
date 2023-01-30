@@ -28,16 +28,19 @@ class Transaction:
         #self.transaction_inputs: λίστα από Transaction Input 
         #self.transaction_outputs: λίστα από Transaction Output 
         #selfSignature
+        pass
 
 
     
 
 
     def to_dict(self):
+        pass
         
 
     def sign_transaction(self):
         """
         Sign transaction with private key
         """
+        pass
        
