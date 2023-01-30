@@ -12,17 +12,26 @@ from time import time
 from urllib.parse import urlparse
 from uuid import uuid4
 
-
-
 class wallet:
 
-	def __init__():
-		##set
+	def __init__(self):
+		# generate an RSA key
+		key = RSA.generate(2048)
 
-		#self.public_key
-		#self.private_key
+		self.public_key = key.public_key()
+		self.private_key = key
+
 		#self_address
 		#self.transactions
 
-	def balance():
+	# def balance():
 
+
+
+# testing 
+
+def main():
+	w = wallet()
+
+if __name__ == '__main__':
+	main()
