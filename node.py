@@ -21,7 +21,7 @@ class node:
 
 	def create_wallet():
 		#create a wallet for this node, with a public key and a private key
-		wallet = wallet.wallet()
+		self.wallet = wallet.wallet()
 
 	def register_node_to_ring():
 		#add this node to the ring, only the bootstrap node can add a node to the ring after checking his wallet and ip:port address
