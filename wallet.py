@@ -32,6 +32,9 @@ class wallet:
 
 	# def balance():
 
+	def get_public_key(self):
+		return self.public_key
+
 	def sign(self,data):
 		# get the key
 		f = open('mykey.pem','r')
