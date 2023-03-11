@@ -18,10 +18,10 @@ class wallet:
 		# generate an RSA key
 		key = RSA.generate(2048)
 
-		# write the key to a file
-		f = open('mykey.pem','wb')
-		f.write(key.export_key('PEM'))
-		f.close()
+		# # write the key to a file
+		# f = open('mykey.pem','wb')
+		# f.write(key.export_key('PEM'))
+		# f.close()
 		
 		# keys as class attibutes
 		self.public_key = key.public_key()

@@ -15,7 +15,7 @@ class Block:
 		#self.nonce
 		#self.listOfTransactions
 		self.previousHash = previousHash
-		self.timestamp = time.now()
+		self.timestamp = time.time()
 		self.listOfTransactions = []
 
 	
@@ -26,6 +26,6 @@ class Block:
 	def setNonce(self, nonce):
 		self.nonce = nonce
 		
-	def add_transaction(self, trans, blkchain):
+	def add_transaction(self, trans, blkchain=None):
 		#add a transaction to the block
 		self.listOfTransactions.append(trans)

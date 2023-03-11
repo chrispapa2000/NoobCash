@@ -20,6 +20,8 @@ class node:
 
 		self.ring = []
 
+		self.create_wallet()
+
 	
 	def set_id(self, id):
 		self.id = id

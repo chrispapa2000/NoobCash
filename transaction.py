@@ -27,10 +27,11 @@ class Transaction:
         self.sender_address = sender_address
         self.receiver_address = recipient_address
         self.amount = value
-        self.private_key = sender_private_key
-
+        
         # adds the transaction id and signature fields
-        self.sign_transaction()
+        if sender_private_key:
+            self.private_key = sender_private_key
+            self.sign_transaction()
         
         self.transaction_inputs = [{"previousOutputId":1}] # to be changed
         self.transaction_outputs = [{"transaction_id":1, "receiver_address":1, "amount":1}] # to be changed    

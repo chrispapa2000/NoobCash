@@ -1,20 +1,22 @@
-# import blockchain
-# import wallet
 import requests
 import block
 import node
 import transaction
+from blockchain import Blockchain
+
+
 from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
+
 
 # global vars
 port = 0
 host = ""
 number_of_nodes = 5
+blockchain = Blockchain()
 
 app = Flask(__name__)
 CORS(app)
-# blockchain = Blockchain()
 
 
 #---Initialization Functions---
@@ -37,7 +39,7 @@ def broadcast_node_info():
 
 def initialize_blockchain():
     # create first transaction
-    t0 = transaction.Transaction(sender_address=0, recipient_address=node.get_node_public_key(), value=100*number_of_nodes)
+    t0 = transaction.Transaction(sender_address=0, recipient_address=node.get_node_public_key(), sender_private_key=None, value=100*number_of_nodes)
 
     # create genesis block
     genesis_block = block.Block(previousHash=1)
@@ -46,8 +48,8 @@ def initialize_blockchain():
     genesis_block.add_transaction(t0)
     genesis_block.setNonce(0)
 
-    # 
-
+    # add the genesis block to the blockchain
+    blockchain.add_block(genesis_block)
 
 #--- App Routes ---
 
