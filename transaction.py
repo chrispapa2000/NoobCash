@@ -32,7 +32,7 @@ class Transaction:
         self.amount = value
 
         # adds the transaction id and signature fields
-        self.sign_transaction()
+        self.sign_transaction(sender_private_key)
         
         self.transaction_inputs = [{"previousOutputId":1}] # to be changed
         self.transaction_outputs = [{"transaction_id":1, "receiver_address":1, "amount":1}] # to be changed    
@@ -51,7 +51,7 @@ class Transaction:
         return d
         
 
-    def sign_transaction(self):
+    def sign_transaction(self, sender_private_key):
         """
         Sign transaction with private key
         """
