@@ -7,19 +7,31 @@ class node:
 		##set
 
 		#self.chain
-		self.current_id_count = 0
+		#self.current_id_count = 0
 		#self.NBCs
 		#self.wallet
-
+		#self.id
 		#self.ring[]   #here we store information for every node, as its id, its address (ip:port) its public key and its balance 
+
+		self.current_id_count = 0
 
 		if id:
 			self.id = id
 
 		self.ring = []
 
+	
+	def set_id(self, id):
+		self.id = id
 
+	def get_id_count(self):
+		return self.current_id_count	
+	
+	def inc_id_count(self):
+		self.current_id_count += 1
 
+	def get_node_public_key(self):
+		return self.wallet.get_public_key()
 
 	def create_new_block():
 		pass
