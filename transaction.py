@@ -31,6 +31,30 @@ class Transaction:
         self.receiver_address = recipient_address
         self.amount = value
 
+        # adds the transaction id and signature fields
+        self.sign_transaction()
+        
+        self.transaction_inputs = [{"previousOutputId":1}] # to be changed
+        self.transaction_outputs = [{"transaction_id":1, "receiver_address":1, "amount":1}] # to be changed    
+
+
+    def to_dict(self):
+        d = {
+            "sender_address": self.sender_address,
+            "receiver_address": self.receiver_address,
+            "amount": self.amount,
+            "transaction_id": self.transaction_id,
+            "transaction_inputs": self.transaction_inputs,
+            "transaction_outputs": self.transaction_outputs,
+            "signature": self.signature
+        }
+        return d
+        
+
+    def sign_transaction(self):
+        """
+        Sign transaction with private key
+        """
         # transaction as dict
         d = {
             "sender_address": self.sender_address,
@@ -47,23 +71,5 @@ class Transaction:
         # assign the values 
         self.transaction_id = hash_object
         self.signature = signature
-
-        self.transaction_inputs = [{"previousOutputId":1}] # to be changed
-        self.transaction_outputs = [{"transaction_id":1, "receiver_address":1, "amount":1}] # to be changed    
-
-
-    def to_dict(self):
-        d = {
-            "sender_address": self.sender_address,
-            "receiver_address": self.receiver_address,
-            "amount": self.amount
-        }
-        return d
         
-
-    def sign_transaction(self):
-        """
-        Sign transaction with private key
-        """
-        pass
        
