@@ -15,10 +15,7 @@ from flask import Flask, jsonify, request, render_template
 class Transaction:
 
     def __init__(self, sender_address, sender_private_key, recipient_address, value):
-
-
         ##set
-
         #self.sender_address: To public key του wallet από το οποίο προέρχονται τα χρήματα
         #self.receiver_address: To public key του wallet στο οποίο θα καταλήξουν τα χρήματα
         #self.amount: το ποσό που θα μεταφερθεί
@@ -30,9 +27,10 @@ class Transaction:
         self.sender_address = sender_address
         self.receiver_address = recipient_address
         self.amount = value
+        self.private_key = sender_private_key
 
         # adds the transaction id and signature fields
-        self.sign_transaction(sender_private_key)
+        self.sign_transaction()
         
         self.transaction_inputs = [{"previousOutputId":1}] # to be changed
         self.transaction_outputs = [{"transaction_id":1, "receiver_address":1, "amount":1}] # to be changed    
@@ -51,7 +49,7 @@ class Transaction:
         return d
         
 
-    def sign_transaction(self, sender_private_key):
+    def sign_transaction(self):
         """
         Sign transaction with private key
         """
@@ -64,7 +62,7 @@ class Transaction:
         # transaction to hash
         hash_object = SHA.new(data=binascii.a2b_qp(jsonify(d)))
         # get the signature
-        signer = PKCS1_v1_5.new(sender_private_key)
+        signer = PKCS1_v1_5.new(self.sender_private_key)
         #sign the hash object
         signature = signer.sing(hash_object)
 
