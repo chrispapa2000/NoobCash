@@ -21,10 +21,11 @@ class Block:
 	
 	def myHash(self):
 		#calculate self.hash
-
 		self.hash = 1 # to be changed 
 
-
-	def add_transaction(self, trnsaction, blckchain):
+	def setNonce(self, nonce):
+		self.nonce = nonce
+		
+	def add_transaction(self, trans, blkchain):
 		#add a transaction to the block
-		self.listOfTransactions.append(trnsaction)
+		self.listOfTransactions.append(trans)
