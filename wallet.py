@@ -19,13 +19,13 @@ class wallet:
 		# export private key
 		key = RSA.generate(2048)
 		private_key = key.export_key()
-		file_out = open(f"private_{port}.pem", 'wb')
+		file_out = open(f"personal_keys/private_{port}.pem", 'wb')
 		file_out.write(private_key)
 		file_out.close()
 
 		# export public key
 		public_key = key.publickey().export_key()
-		file_out = open(f"public_{port}.pem", "wb")
+		file_out = open(f"personal_keys/public_{port}.pem", "wb")
 		file_out.write(public_key)
 		file_out.close()
 		

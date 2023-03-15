@@ -3,11 +3,14 @@ import wallet
 from transaction import Transaction
 from Crypto.Signature import PKCS1_v1_5
 import requests
-
+import transaction
+from blockchain import Blockchain
+import json
+import os
 
 
 class node:
-	def __init__(self, number_of_nodes, id=None, port=None):
+	def __init__(self, number_of_nodes, port, host, id=None):
 		# self.NBC=100;
 		##set
 
@@ -17,6 +20,9 @@ class node:
 		#self.wallet
 		#self.id
 		#self.ring[]   #here we store information for every node, as its id, its address (ip:port) its public key and its balance 
+		self.host= host
+		self.port = port
+		self.number_of_nodes = number_of_nodes
 
 		self.current_id_count = 0
 
@@ -30,7 +36,54 @@ class node:
 
 		self.create_wallet(port=port)
 
-	
+		self.blockchain = Blockchain()
+
+	#---Initialization Functions---
+
+	# function used by non bootstrap nodes to request participation in the blockchain
+	def request_participation(self):
+		# if you are not the bootstrap server, you request participation from the bootstrap server
+		# make a get request
+		bootstrap_url = 'http://127.0.0.1:5000'
+		# with app.app_context():
+		files = {'upload_file': open(f"personal_keys/public_{self.port}.pem",'rb')}
+		response = requests.post(f"{bootstrap_url}/participate/{self.host}/{self.port}", files=files)
+		response_json = response.json()
+		print(response_json['id'])
+		self.set_id(id=response_json['id'])
+
+	# function that initializes the blockchain in the bootstrap node
+	def initialize_blockchain(self):
+		# create first transaction
+		t0 = transaction.Transaction(sender_address=0, recipient_address=self.get_node_public_key(), sender_private_key=None, value=100*self.number_of_nodes,
+									transaction_inputs=[{"transaction_id":0, "receiver_address":0, "amount":100*self.number_of_nodes}])
+
+		# create genesis block
+		genesis_block = block.Block(previousHash=1)
+
+		# add the first transaction to the block
+		genesis_block.add_transaction(t0)
+		genesis_block.setNonce(0)
+
+		# add the genesis block to the blockchain
+		self.blockchain.add_block(genesis_block)
+
+	# function that broadcast info gathered by the bootstrap node to all other nodes
+	def broadcast_participants(self):
+		# get all pub key files names 
+		filenames = [item for item in os.listdir('received_keys') if item.startswith("public")]
+		files = dict()
+		for item in filenames:
+			files[item] = open(f"received_keys/{item}", 'rb')
+		files["ring"]=json.dumps({"ring":self.get_ring()}) 
+
+		# files = {'file1': open('report.xls', 'rb'), 'file2': open('otherthing.txt', 'rb')}
+		for other_node in self.get_ring():
+			if other_node['id'] != self.id:
+				url = 'http://'+other_node["remote_ip"]+':'+other_node["remote_port"]+'/get_participants_info'
+				response = requests.post(url, files=files)
+
+	#---Normal Class Functions---
 	def set_id(self, id):
 		self.id = id
 
@@ -49,6 +102,12 @@ class node:
 	def set_UTXOs(self, id, nbcList):
 		self.UTXOs[id] = nbcList
 
+	def get_ring(self):
+		return self.ring
+	
+	def set_ring(self, ring):
+		self.ring = ring
+	
 	def create_new_block(self, previousHash):
 		self.current_block = block.Block(previousHash=previousHash)
 
