@@ -34,7 +34,6 @@ class Transaction:
         # self.transaction_outputs = [{"transaction_id":1, "receiver_address":1, "amount":1}] # to be changed 
         
         # adds the transaction id and signature fields
-        # if sender_private_key:
         self.private_key = sender_private_key
         self.sign_transaction()
 
@@ -75,6 +74,13 @@ class Transaction:
         """
         Sign transaction with private key
         """
+
+        # for first transaction that is not verifiable
+        if not self.private_key:
+            self.transaction_id = 0
+            self.signature = 0
+            return
+        
         # transaction as dict
         d = {
             "sender_address": self.sender_address,
@@ -97,7 +103,7 @@ class Transaction:
 # for testing 
 def main():
     t = Transaction(1,RSA.generate(2048),2,1,[{"transaction_id":1, "receiver_address":1, "amount":1}])
-    print(t.to_dict())
+    print(t.to_dict()['sender_address'])
 
 if __name__=="__main__":
     main()

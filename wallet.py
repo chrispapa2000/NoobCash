@@ -14,14 +14,20 @@ from uuid import uuid4
 
 class wallet:
 
-	def __init__(self):
+	def __init__(self, port):
 		# generate an RSA key
+		# export private key
 		key = RSA.generate(2048)
+		private_key = key.export_key()
+		file_out = open(f"private_{port}.pem", 'wb')
+		file_out.write(private_key)
+		file_out.close()
 
-		# # write the key to a file
-		# f = open('mykey.pem','wb')
-		# f.write(key.export_key('PEM'))
-		# f.close()
+		# export public key
+		public_key = key.publickey().export_key()
+		file_out = open(f"public_{port}.pem", "wb")
+		file_out.write(public_key)
+		file_out.close()
 		
 		# keys as class attibutes
 		self.public_key = key.public_key()
@@ -35,9 +41,9 @@ class wallet:
 	def get_public_key(self):
 		return self.public_key
 
-	def sign(self,data):
+	def sign(self, port, data):
 		# get the key
-		f = open('mykey.pem','r')
+		f = open(f"private_{port}.pem",'r')
 		key = RSA.import_key(f.read())
 		
 		# signature object
@@ -50,11 +56,11 @@ class wallet:
 		signature = signer.sign(hash_object)
 		return signature
 
-	def verify(self, data, signature):
+	def verify(self, port, data, signature):
 		# get the key
-		f = open('mykey.pem','r')
+		f = open(f"public_{port}.pem",'r')
 		key = RSA.import_key(f.read())
-		key = key.public_key()
+		# key = key.public_key()
 		
 		# signature object
 		singer = PKCS1_v1_5.new(key)
@@ -72,9 +78,9 @@ class wallet:
 # testing 
 
 def main():
-	w = wallet()
-	sig = w.sign("Hello World")
-	w.verify("Hello World", sig)
+	w = wallet(port=1)
+	sig = w.sign(data="Hello World", port=1)
+	w.verify(data="Hello World", signature=sig, port=1)
 
 if __name__ == '__main__':
 	main()

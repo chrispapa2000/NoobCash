@@ -3,6 +3,7 @@ import block
 import node
 import transaction
 from blockchain import Blockchain
+from fileinput import filename
 
 
 from flask import Flask, jsonify, request, render_template
@@ -26,20 +27,18 @@ def request_participation():
     # if you are not the bootstrap server, you request participation from the bootstrap server
     # make a get request
     bootstrap_url = 'http://127.0.0.1:5000'
-    public_key = 1
     with app.app_context():
-        response = requests.get(f"{bootstrap_url}/participate/{public_key}/{host}/{port}")
+        files = {'upload_file': open(f"public_{port}.pem",'rb')}
+        response = requests.post(f"{bootstrap_url}/participate/{host}/{port}", files=files)
         response_json = response.json()
         print(response_json['id'])
         node.set_id(id=response_json['id'])
 
-# function 
-def broadcast_node_info():
-    pass
 
 def initialize_blockchain():
     # create first transaction
-    t0 = transaction.Transaction(sender_address=0, recipient_address=node.get_node_public_key(), sender_private_key=None, value=100*number_of_nodes)
+    t0 = transaction.Transaction(sender_address=0, recipient_address=node.get_node_public_key(), sender_private_key=None, value=100*number_of_nodes,
+                                 transaction_inputs=[{"transaction_id":0, "receiver_address":0, "amount":100*number_of_nodes}])
 
     # create genesis block
     genesis_block = block.Block(previousHash=1)
@@ -54,11 +53,19 @@ def initialize_blockchain():
 #--- App Routes ---
 
 # route called in the bootstrap node to allow other nodes to participate
-@app.route('/participate/<public_key>/<remote_ip>/<remote_port>', methods=['GET'])
-def participate(public_key, remote_ip, remote_port):
+@app.route('/participate/<remote_ip>/<remote_port>', methods=['POST'])
+def participate(remote_ip, remote_port):
+
+    # detach pub key file and save it
+    f = request.files['upload_file']
+    f.save(f"received_keys/{f.filename}")
+    
+    # get new node id
     node.inc_id_count()
     id = node.get_id_count()
-    node.register_node_to_ring(id, public_key, remote_ip, remote_port, balance=0)
+
+    # save new node's data
+    node.register_node_to_ring(id, f"received_keys/{f.filename}", remote_ip, remote_port, balance=0)
     resp = {"id":node.current_id_count}
 
     print("_____________________________")
@@ -66,12 +73,33 @@ def participate(public_key, remote_ip, remote_port):
     print("current ring:", node.ring)
     print("_____________________________")
 
-
-    # if we have reached the desird number of participants inform all nodes
-    if node.get_id_count() == number_of_nodes - 1:
-        broadcast_node_info()
-
+    # return response
     return jsonify(resp), 200
+
+
+@app.route('/broadcast_participants', methods='GET')
+def broadcast_participants():
+    if node.get_id_count == number_of_nodes - 1:
+        for item in node.ring:
+            if item['id'] != node.id:
+                url = 'http://'+item["remote_ip"]+':'+item["remote_port"]+'/node_info'
+                print(url)
+                print(node.ring)
+                print()
+                response = requests.post(url, json={"hello":1})
+
+
+@app.route('/node_info/', methods=['POST', 'GET'])
+def get_node_info():
+    if request.method == 'POST':
+        print(request.json['hello'])
+        return jsonify("OK"), 200
+
+# # post new transaction to all other nodes
+# @app.route('/new_transaction/<trans>', methods=['POST'])
+# def post_transaction(trans):
+#     if node.validate_transaction(trans):
+#         node.add_transaction_to_block(trans)
 
 
 # get all transactions in the blockchain
@@ -97,7 +125,7 @@ if __name__ == '__main__':
 
     # only executed for bootstrap node
     if args.bootstrap == 1:
-        node = node.node(id=id)
+        node = node.node(number_of_nodes=number_of_nodes, id=id, port=port)
         number_of_nodes = args.number_nodes
         # initialize block chain
         initialize_blockchain()
@@ -105,7 +133,7 @@ if __name__ == '__main__':
 
     # executed for all non-bootstrap nodes
     else:
-        node = node.node()   
+        node = node.node(number_of_nodes=number_of_nodes, port=port)   
         # subscribe to the blockchain, by communicating with the bootstrap node
         request_participation()
 
