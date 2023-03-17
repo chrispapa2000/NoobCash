@@ -6,4 +6,4 @@ class Blockchain():
         self.list_of_blocks = []
 
     def add_block(self, bl: block.Block):
-        self.list_of_blocks.append(bl)
+        self.list_of_blocks.append(bl.to_dict())

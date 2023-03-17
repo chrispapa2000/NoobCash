@@ -59,7 +59,7 @@ class node:
 									transaction_inputs=[{"transaction_id":0, "receiver_address":0, "amount":100*self.number_of_nodes}])
 
 		# create genesis block
-		genesis_block = block.Block(previousHash=1)
+		genesis_block = block.Block(previousHash=1,index=0)
 
 		# add the first transaction to the block
 		genesis_block.add_transaction(t0)
@@ -82,6 +82,14 @@ class node:
 			if other_node['id'] != self.id:
 				url = 'http://'+other_node["remote_ip"]+':'+other_node["remote_port"]+'/get_participants_info'
 				response = requests.post(url, files=files)
+	
+	# function that broadcasts the initial blockhain from the bootstrap node to the other nodes 
+	def braodcast_blockchain(self):
+		for other_node in self.get_ring():
+			url = 'http://'+other_node["remote_ip"]+':'+other_node["remote_port"]+'/get_initial_blockchain'
+			json = {"blockchain":self.get_blockchain()}
+
+
 
 	#---Normal Class Functions---
 	def set_id(self, id):
@@ -107,6 +115,9 @@ class node:
 	
 	def set_ring(self, ring):
 		self.ring = ring
+
+	def get_blockchain(self):
+		return self.blockchain()
 	
 	def create_new_block(self, previousHash):
 		self.current_block = block.Block(previousHash=previousHash)
