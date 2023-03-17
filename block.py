@@ -28,6 +28,7 @@ class Block:
 			"capacity": self.capacity,
 			"listOfTransactions": self.listOfTransactions
 		}
+		return d
 		
 	def myHash(self):
 		#calculate self.hash

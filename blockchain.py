@@ -11,3 +11,9 @@ class Blockchain():
 
     def get_block_capacity(self):
         return self.block_capacity
+    
+    def get_chain(self):
+        return self.list_of_blocks
+    
+    def set_chain(self, chain):
+        self.list_of_blocks = [blk for blk in chain]

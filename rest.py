@@ -53,12 +53,6 @@ def route_broadcast_participants():
         node.broadcast_participants()
     return jsonify("OK"), 200
 
-@app.route('/broadcast_blockchain', methods=['GET'])
-def route_broadcast_blockchain():
-    if node.get_id_count == number_of_nodes - 1:
-        pass
-
-
 @app.route('/get_participants_info/', methods=['POST', 'GET'])
 def get_participants_info():
     if request.method == 'POST':    
@@ -69,9 +63,25 @@ def get_participants_info():
             if filename != 'ring':
                 f[filename].save(f"other_received_keys/{filename}")
         ringObj = json.loads(request.files['ring'].read())
+       
+        for obj in ringObj['ring']:
+            obj['public_key'] = obj['public_key'].replace("received_keys", "other_received_keys")
+
         node.set_ring(ringObj['ring'])
         print(node.get_ring())
         return jsonify("OK"), 200
+    
+@app.route('/broadcast_blockchain', methods=['GET'])
+def route_broadcast_blockchain():
+    if node.get_id_count == number_of_nodes - 1:
+        node.braodcast_blockchain()
+
+@app.route('get_blockchain_info', methods=['POST'])
+def route_get_blockchain_info():
+    blkchain = request.json['chain']
+    print(blkchain)
+    # node.set_blockchain(blkchain)
+
 
 # get all transactions in the blockchain
 @app.route('/transactions/get', methods=['GET'])

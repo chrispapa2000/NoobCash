@@ -87,7 +87,8 @@ class node:
 	def braodcast_blockchain(self):
 		for other_node in self.get_ring():
 			url = 'http://'+other_node["remote_ip"]+':'+other_node["remote_port"]+'/get_initial_blockchain'
-			json = {"blockchain":self.get_blockchain()}
+			json = {"chain":self.blockchain.get_chain()}
+			response = requests.post(url, json=json)
 
 
 
@@ -118,6 +119,9 @@ class node:
 
 	def get_blockchain(self):
 		return self.blockchain()
+	
+	def set_blockchain(self, chain):
+		self.blockchain.set_chain(chain)
 	
 	def create_new_block(self, previousHash):
 		self.current_block = block.Block(previousHash=previousHash)
