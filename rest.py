@@ -61,7 +61,7 @@ def route_broadcast_blockchain():
 
 @app.route('/get_participants_info/', methods=['POST', 'GET'])
 def get_participants_info():
-    if request.method == 'POST':
+    if request.method == 'POST':    
         # print(request.json['ring'])
         # print(request.files)
         f = request.files

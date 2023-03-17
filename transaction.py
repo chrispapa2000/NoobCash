@@ -85,7 +85,8 @@ class Transaction:
         d = {
             "sender_address": self.sender_address,
             "receiver_address": self.receiver_address,
-            "amount": self.amount
+            "amount": self.amount,
+            "transaction_inputs": self.transaction_inputs
         }
         # transaction to hash
         hash_object = SHA.new(data=binascii.a2b_qp(str(d)))
