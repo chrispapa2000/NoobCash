@@ -30,13 +30,16 @@ class Block:
 			"listOfTransactions": self.listOfTransactions
 		}
 		
-	def myHash(self):
+	def my_hash(self):
 		#calculate self.hash
 		self.hash = 1 # to be changed 
 
-	def setNonce(self, nonce):
+	def set_nonce(self, nonce):
 		self.nonce = nonce
 		
+    def get_nonce():
+        return self.nonce
+
 	def add_transaction(self, trans: transaction.Transaction, blkchain=None):
         if self.is_filled():
             raise Exception("Block is filled. Adding transaction would exceed capacity.")
