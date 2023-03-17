@@ -7,7 +7,7 @@ import time
 
 
 class Block:
-	def __init__(self, index, previousHash, capacity=5, ):
+	def __init__(self, index, previousHash, capacity=5, nonce=1):
 		##set
 		#self.previousHash
 		#self.timestamp
@@ -18,6 +18,7 @@ class Block:
 		self.previousHash = previousHash
 		self.capacity = capacity
 		self.timestamp = time.time()
+        self.nonce = nonce
 		self.listOfTransactions = []
 
 	def to_dict(self):
@@ -37,7 +38,7 @@ class Block:
 		self.nonce = nonce
 		
 	def add_transaction(self, trans: transaction.Transaction, blkchain=None):
-        if is_filled():
+        if self.is_filled():
             raise Exception("Block is filled. Adding transaction would exceed capacity.")
 
         #add a transaction to the block
