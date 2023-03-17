@@ -37,5 +37,11 @@ class Block:
 		self.nonce = nonce
 		
 	def add_transaction(self, trans: transaction.Transaction, blkchain=None):
-		#add a transaction to the block
+        if is_filled():
+            raise Exception("Block is filled. Adding transaction would exceed capacity.")
+
+        #add a transaction to the block
 		self.listOfTransactions.append(trans.to_dict())
+
+    def is_filled(self):
+        return len(self.listOfTransactions) >= self.capacity
