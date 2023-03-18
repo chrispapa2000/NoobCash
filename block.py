@@ -5,8 +5,6 @@ import time
 import pickle
 
 
-
-
 class Block:
 	def __init__(self, index, previousHash, capacity=5, ):
 		##set
