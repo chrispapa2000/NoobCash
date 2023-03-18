@@ -11,6 +11,7 @@ from Crypto.Signature import PKCS1_v1_5
 import requests
 from flask import Flask, jsonify, request, render_template
 import json
+import pickle
 
 
 class Transaction:
@@ -34,10 +35,10 @@ class Transaction:
         # self.transaction_outputs = [{"transaction_id":1, "receiver_address":1, "amount":1}] # to be changed 
         
         # adds the transaction id and signature fields
-        self.private_key = sender_private_key
-        self.sign_transaction()
-
+        # self.private_key = sender_private_key
         self.transaction_inputs = transaction_inputs
+
+        self.sign_transaction(private_key=sender_private_key)
         self.set_transaction_outputs()
         
         
@@ -70,13 +71,13 @@ class Transaction:
 
               
 
-    def sign_transaction(self):
+    def sign_transaction(self, private_key=None):
         """
         Sign transaction with private key
         """
 
         # for first transaction that is not verifiable
-        if not self.private_key:
+        if not private_key:
             self.transaction_id = 0
             self.signature = 0
             return
@@ -91,20 +92,52 @@ class Transaction:
         # transaction to hash
         hash_object = SHA.new(data=binascii.a2b_qp(str(d)))
         # get the signature
-        signer = PKCS1_v1_5.new(self.private_key)
+        signer = PKCS1_v1_5.new(private_key)
         #sign the hash object
         signature = signer.sign(hash_object)
 
         # assign the values 
-        self.transaction_id = hash_object
+        self.transaction_id = hash_object.digest()
         self.signature = signature
+
+    def to_pickle(self, filename, basedir='pickles'):
+        with open(f"{basedir}/{filename}", 'wb') as f:  # open a text file
+            pickle.dump(self, f) # serialize the class 
+
+    def from_pickle(self, filename, basedir='pickles'):
+        # open pickle file and read it
+        with open(f"{basedir}/{filename}", 'rb') as f:
+            temp = pickle.load(f)
+        
+        # transfer the data to current object 
+        self.sender_address = temp.sender_address
+        self.receiver_address = temp.receiver_address
+        self.amount = temp.amount
+        self.transaction_id = temp.transaction_id
+        self.signature = temp.signature
+        self.transaction_inputs = temp.transaction_inputs
+        self.transaction_outputs = temp.transaction_outputs
+        
+        # # delete .pickle file
+        # os.remove(filename)
 
 
 
 # for testing 
 def main():
     t = Transaction(1,RSA.generate(2048),2,1,[{"transaction_id":1, "receiver_address":1, "amount":1}])
-    print(t.to_dict()['sender_address'])
+    # print(t.to_dict())
+
+    t.to_pickle(filename='transaction.pkl')
+    
+    t1 = Transaction(6,RSA.generate(2048),2,1,[{"transaction_id":3, "receiver_address":1, "amount":1}])
+    t1.from_pickle(filename='transaction.pkl')
+    for key in t.to_dict().keys():
+        if t.to_dict()[key] != t1.to_dict()[key]:
+            print(False)
+            return
+    print(True)
+
 
 if __name__=="__main__":
     main()

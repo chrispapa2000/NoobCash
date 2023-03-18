@@ -43,7 +43,7 @@ class wallet:
 
 	def sign(self, port, data):
 		# get the key
-		f = open(f"private_{port}.pem",'r')
+		f = open(f"personal_keys/private_{port}.pem",'r')
 		key = RSA.import_key(f.read())
 		
 		# signature object
@@ -58,7 +58,7 @@ class wallet:
 
 	def verify(self, port, data, signature):
 		# get the key
-		f = open(f"public_{port}.pem",'r')
+		f = open(f"personal_keys/public_{port}.pem",'r')
 		key = RSA.import_key(f.read())
 		# key = key.public_key()
 		
@@ -66,7 +66,7 @@ class wallet:
 		singer = PKCS1_v1_5.new(key)
 
 		# hash object
-		hash_object = SHA.new(data=binascii.a2b_qp(data))
+		hash_object = SHA.new(data=binascii.a2b_qp(data)).hexdigest()
 
 		# sign the hash object
 		try:

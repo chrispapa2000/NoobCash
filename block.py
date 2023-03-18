@@ -2,6 +2,7 @@
 # import blockchain
 import transaction
 import time
+import pickle
 
 
 
@@ -46,3 +47,26 @@ class Block:
 
 	def is_filled(self):
 		return len(self.listOfTransactions) >= self.capacity
+	
+	def to_pickle(self, filename, basedir='pickles'):
+		with open(f"{basedir}/{filename}", 'wb') as f:  # open a text file
+			pickle.dump(self, f) # serialize the class 
+
+	def from_pickle(self, filename, basedir='pickles'):
+		# open pickle file and read it
+		with open(f"{basedir}/{filename}", 'rb') as f:
+			temp = pickle.load(f)
+		
+		# transfer the data to current object 
+		self.index = temp.index
+		self.previousHash = temp.previousHash
+		self.capacity = temp.capacity
+		self.timestamp = temp.capacity
+		self.listOfTransactions = temp.listOfTransactions
+		self.hash = temp.hash
+		self.nonce = temp.nonce
+		
+		# # delete .pickle file
+		# os.remove(filename)
+
+		
