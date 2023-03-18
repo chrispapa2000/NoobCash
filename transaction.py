@@ -138,6 +138,8 @@ def main():
             return
     print(True)
 
+    print(RSA.generate(2048).public_key)
+
 
 if __name__=="__main__":
     main()

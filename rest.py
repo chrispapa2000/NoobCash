@@ -9,6 +9,7 @@ from fileinput import filename
 from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
 import json
+import os
 
 
 # global vars
@@ -24,18 +25,18 @@ CORS(app)
 #--- App Routes ---
 
 # route called in the bootstrap node to allow other nodes to participate
-@app.route('/participate/<remote_ip>/<remote_port>', methods=['POST'])
-def participate(remote_ip, remote_port):
+@app.route('/participate/<remote_ip>/<remote_port>/<n>/<e>', methods=['POST'])
+def participate(remote_ip, remote_port, n, e):
     # detach pub key file and save it
-    f = request.files['upload_file']
-    f.save(f"received_keys/{f.filename}")
+    # f = request.files['upload_file']
+    # f.save(f"received_keys/{f.filename}")
     
     # get new node id
     node.inc_id_count()
     id = node.get_id_count()
 
     # save new node's data
-    node.register_node_to_ring(id, f"received_keys/{f.filename}", remote_ip, remote_port, balance=0)
+    node.register_node_to_ring(id, (int(n),int(e)), remote_ip, remote_port, balance=0)
     resp = {"id":node.current_id_count}
 
     print("_____________________________")
@@ -59,13 +60,10 @@ def get_participants_info():
         # print(request.json['ring'])
         # print(request.files)
         f = request.files
-        for filename in f:
-            if filename != 'ring':
-                f[filename].save(f"other_received_keys/{filename}")
         ringObj = json.loads(request.files['ring'].read())
        
-        for obj in ringObj['ring']:
-            obj['public_key'] = obj['public_key'].replace("received_keys", "other_received_keys")
+        # for obj in ringObj['ring']:
+        #     obj['public_key'] = obj['public_key'].replace("received_keys", "other_received_keys")
 
         node.set_ring(ringObj['ring'])
         print(node.get_ring())
@@ -73,13 +71,19 @@ def get_participants_info():
     
 @app.route('/broadcast_blockchain', methods=['GET'])
 def route_broadcast_blockchain():
-    if node.get_id_count == number_of_nodes - 1:
-        node.braodcast_blockchain()
+    if node.get_id_count() == number_of_nodes - 1:
+        node.broadcast_blockchain()
+        print("broadcasted")
+    return jsonify("OK"), 200
 
-@app.route('get_blockchain_info', methods=['POST'])
-def route_get_blockchain_info():
-    blkchain = request.json['chain']
-    print(blkchain)
+@app.route('/get_initial_blockchain', methods=['POST'])
+def route_get_initial_blockchain():
+    f = request.files['blockchain_file']
+    f.save(f"tempdir/{f.filename}")
+    node.get_blockchain().from_pickle(f"tempdir/{f.filename}")
+    print(node.get_blockchain().get_chain())
+    return jsonify("OK"), 200
+    # os.remove(f"tempdir/{f.filename}")
     # node.set_blockchain(blkchain)
 
 

@@ -7,6 +7,8 @@ import transaction
 from blockchain import Blockchain
 import json
 import os
+from Crypto.PublicKey import RSA
+
 
 
 class node:
@@ -46,8 +48,9 @@ class node:
 		# make a get request
 		bootstrap_url = 'http://127.0.0.1:5000'
 		# with app.app_context():
-		files = {'upload_file': open(f"personal_keys/public_{self.port}.pem",'rb')}
-		response = requests.post(f"{bootstrap_url}/participate/{self.host}/{self.port}", files=files)
+		# files = {'upload_file': open(f"personal_keys/public_{self.port}.pem",'rb')}
+		(n,e) = self.get_my_public_key_tuple()
+		response = requests.post(f"{bootstrap_url}/participate/{self.host}/{self.port}/{n}/{e}")
 		response_json = response.json()
 		print(response_json['id'])
 		self.set_id(id=response_json['id'])
@@ -55,7 +58,7 @@ class node:
 	# function that initializes the blockchain in the bootstrap node
 	def initialize_blockchain(self):
 		# create first transaction
-		t0 = transaction.Transaction(sender_address=0, recipient_address=self.get_node_public_key(), sender_private_key=None, value=100*self.number_of_nodes,
+		t0 = transaction.Transaction(sender_address=0, recipient_address=self.get_my_public_key_tuple(), sender_private_key=None, value=100*self.number_of_nodes,
 									transaction_inputs=[{"transaction_id":0, "receiver_address":0, "amount":100*self.number_of_nodes}])
 
 		# create genesis block
@@ -71,10 +74,7 @@ class node:
 	# function that broadcast info gathered by the bootstrap node to all other nodes
 	def broadcast_participants(self):
 		# get all pub key files names 
-		filenames = [item for item in os.listdir('received_keys') if item.startswith("public")]
 		files = dict()
-		for item in filenames:
-			files[item] = open(f"received_keys/{item}", 'rb')
 		files["ring"]=json.dumps({"ring":self.get_ring()}) 
 
 		# files = {'file1': open('report.xls', 'rb'), 'file2': open('otherthing.txt', 'rb')}
@@ -84,11 +84,16 @@ class node:
 				response = requests.post(url, files=files)
 	
 	# function that broadcasts the initial blockhain from the bootstrap node to the other nodes 
-	def braodcast_blockchain(self):
+	def broadcast_blockchain(self):
 		for other_node in self.get_ring():
-			url = 'http://'+other_node["remote_ip"]+':'+other_node["remote_port"]+'/get_initial_blockchain'
-			json = {"chain":self.blockchain.get_chain()}
-			response = requests.post(url, json=json)
+			if other_node['id'] != self.id:
+				url = 'http://'+other_node["remote_ip"]+':'+other_node["remote_port"]+'/get_initial_blockchain'
+				blkchain = self.get_blockchain()
+				print(blkchain.get_chain())
+				print()
+				self.get_blockchain().to_pickle(filename="blockchain.pkl")
+				files = {'blockchain_file': open(f"pickles/blockchain.pkl",'rb')}
+				response = requests.post(url, files=files)
 
 
 
@@ -102,8 +107,8 @@ class node:
 	def inc_id_count(self):
 		self.current_id_count += 1
 
-	def get_node_public_key(self):
-		return self.wallet.get_public_key()
+	def get_my_public_key_tuple(self):
+		return self.wallet.get_public_key_tuple()
 	
 	def get_UTXOs(self, id):
 		return self.UTXOs[id]
@@ -118,7 +123,7 @@ class node:
 		self.ring = ring
 
 	def get_blockchain(self):
-		return self.blockchain()
+		return self.blockchain
 	
 	def set_blockchain(self, chain):
 		self.blockchain.set_chain(chain)
@@ -128,14 +133,19 @@ class node:
 
 	def create_wallet(self, port):
 		#create a wallet for this node, with a public key and a private key
-		self.wallet = wallet.wallet(port=port)
+		self.wallet = wallet.wallet()
+
+	def get_key_from_tuple(key_tuple):
+		key = RSA.construct(key_tuple)
+		return key.public_key()
 
 	def register_node_to_ring(self, id, public_key, remote_ip, remote_port, balance=0):
 		#add this node to the ring, only the bootstrap node can add a node to the ring after checking his wallet and ip:port address
 		#bottstrap node informs all other nodes and gives the request node an id and 100 NBCs
+		(n,e) = public_key
 		new_node = {
 			'id':id,
-			'public_key':public_key,
+			'public_key':{'n':n, 'e':e},
 			'remote_ip':remote_ip,
 			'remote_port':remote_port,
 			'balance':balance

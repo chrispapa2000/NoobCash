@@ -54,10 +54,10 @@ def main():
     b0.add_transaction(t1)
     blk.add_block(b0)
     
-    blk.to_pickle(filename="pickles/blockchain.pkl")
+    blk.to_pickle(filename="blockchain.pkl")
 
     blk1 = Blockchain()
-    blk1.from_pickle(filename="pickles/blockchain.pkl")
+    blk1.from_pickle(filename="blockchain.pkl")
     print(blk1.get_chain())
 
     print()
