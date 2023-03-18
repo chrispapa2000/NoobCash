@@ -110,8 +110,8 @@ if __name__ == '__main__':
 
     # only executed for bootstrap node
     if args.bootstrap == 1:
-        node = node.node(number_of_nodes=number_of_nodes, host=host, port=port, id=id)
         number_of_nodes = args.number_nodes
+        node = node.node(number_of_nodes=number_of_nodes, host=host, port=port, id=id)
         # initialize block chain
         node.initialize_blockchain()
 
