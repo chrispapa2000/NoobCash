@@ -42,15 +42,17 @@ class Blockchain():
         # os.remove(filename)
 
 
+
 # testing
 
 def main():
     blk = Blockchain()
     b0 = block.Block(0, 0, 2)
-    
-    t0 = transaction.Transaction(0,RSA.generate(2048),2,value=1,transaction_inputs=[{"transaction_id":1, "receiver_address":0, "amount":1}])
+    key0= RSA.generate(2048)
+    key1= RSA.generate(2048)
+    t0 = transaction.Transaction((key0.n,key0.e), key0, (key1.n,key1.e),value=1,transaction_inputs=[{"transaction_id":1, "receiver_address":(key0.n,key0.e), "amount":1}])
     b0.add_transaction(t0)
-    t1 = transaction.Transaction(0,RSA.generate(2048),2,value=1,transaction_inputs=[{"transaction_id":5, "receiver_address":0, "amount":5}])
+    t1 = transaction.Transaction((key1.n,key1.e), key1, (key0.n,key0.e),value=5,transaction_inputs=[{"transaction_id":4, "receiver_address":(key1.n,key1.e), "amount":10}])
     b0.add_transaction(t1)
     blk.add_block(b0)
     
@@ -58,7 +60,9 @@ def main():
 
     blk1 = Blockchain()
     blk1.from_pickle(filename="blockchain.pkl")
-    print(blk1.get_chain())
+    for item in blk1.get_chain():
+        print(item)
+        print()
 
     print()
     print(blk.get_chain() == blk1.get_chain())

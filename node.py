@@ -89,8 +89,8 @@ class node:
 			if other_node['id'] != self.id:
 				url = 'http://'+other_node["remote_ip"]+':'+other_node["remote_port"]+'/get_initial_blockchain'
 				blkchain = self.get_blockchain()
-				print(blkchain.get_chain())
-				print()
+				# print(blkchain.get_chain())
+				# print()
 				self.get_blockchain().to_pickle(filename="blockchain.pkl")
 				files = {'blockchain_file': open(f"pickles/blockchain.pkl",'rb')}
 				response = requests.post(url, files=files)

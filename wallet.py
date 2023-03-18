@@ -47,7 +47,17 @@ class wallet:
 	# 	return self.public_key
 	
 	def get_public_key_tuple(self):
+		"""
+		returns (n,e) public key tuple
+		"""
 		return self.public_key_tuple
+	
+	def get_private_key(self):
+		"""
+		return a private key object, that can be directly used for signing
+		"""
+		key = RSA.construct(self.private_key_tuple)
+		return key
 
 	def sign(self, port, data):
 		# get the key

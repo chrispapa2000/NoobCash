@@ -80,7 +80,7 @@ def route_broadcast_blockchain():
 def route_get_initial_blockchain():
     f = request.files['blockchain_file']
     f.save(f"tempdir/{f.filename}")
-    node.get_blockchain().from_pickle(f"tempdir/{f.filename}")
+    node.get_blockchain().from_pickle(f"{f.filename}", basedir="tempdir")
     print(node.get_blockchain().get_chain())
     return jsonify("OK"), 200
     # os.remove(f"tempdir/{f.filename}")
