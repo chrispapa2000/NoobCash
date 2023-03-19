@@ -194,6 +194,8 @@ class node:
             files = {'transaction_file': open(f"pickles/trans.pkl",'rb')}
             response = requests.post(url, files=files)
 
+    # test
+
     def verify_signature(self, trans:Transaction):
         #use of signature and NBCs balance
         # check signature
