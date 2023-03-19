@@ -3,6 +3,8 @@
 import transaction
 import time
 import pickle
+# import json
+# from Crypto.Hash import SHA256
 
 
 class Block:
@@ -18,6 +20,8 @@ class Block:
 		self.capacity = capacity
 		self.timestamp = time.time()
 		self.listOfTransactions = []
+		#self.nonce = None
+		#self.current_hash = None
 
 	def to_dict(self):
 		d = {
@@ -25,16 +29,25 @@ class Block:
 			"previousHash": self.previousHash,
 			"timestamp": self.timestamp,
 			"capacity": self.capacity,
-			"listOfTransactions": self.listOfTransactions
+			"listOfTransactions": self.listOfTransactions#,
+			#"nonce": self.nonce,
+			#"current_hash": self.current_hash
 		}
 		return d
-		
+
 	def myHash(self):
 		#calculate self.hash
+		#block_list = [self.timestamp, [tr.transaction_id for tr in self.listOfTransactions], self.nonce, self.previousHash]
+		#tmp = json.dumps(block_list.to_dict())
+		#self.hash = SHA256.new(tmp.encode("ISO-8859-2")).hexdigest()
 		self.hash = 1 # to be changed 
 
+	#two blocks are equal if current hash is equal
+	def __eq__(self, other):
+		return self.current_hash == other.current_hash
+	
 	def setNonce(self, nonce):
-		self.nonce = nonce
+		self.nonce = nonce # this maybe has to go on init too? 
 		
 	def add_transaction(self, trans: transaction.Transaction, blkchain=None):
 		if self.is_filled():
