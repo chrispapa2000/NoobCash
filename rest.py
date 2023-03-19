@@ -86,6 +86,16 @@ def route_get_initial_blockchain():
     # os.remove(f"tempdir/{f.filename}")
     # node.set_blockchain(blkchain)
 
+# get all transactions in the blockchain
+@app.route('/get_transaction/', methods=['GET'])
+def get_transactions():
+    f = request.files['transaction_file']
+    f.save(f"tempdir/{f.filename}")
+    t = transaction.Transaction.from_pickle(filename=f.filename, basedir='tempdir')
+    node.validate_transaction(t)
+    return jsonify("OK"), 200
+    
+
 
 # get all transactions in the blockchain
 @app.route('/transactions/get', methods=['GET'])
