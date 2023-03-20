@@ -107,18 +107,13 @@ class node:
                 blkchain = self.get_blockchain()
                 # print(blkchain.get_chain())
                 # print()
-                self.get_blockchain().to_pickle(filename="blockchain.pkl")
-                files = {'blockchain_file': open(f"pickles/blockchain.pkl",'rb')}
+                # self.get_blockchain().to_pickle(filename="blockschain.pkl")
+                # files = {'blockchain_file': open(f"pickles/blockchain.pkl",'rb')}
+                files = {'blockchain_file' : pickle.dumps(blkchain)}
                 response = requests.post(url, files=files)
 
-    # def ring_to_dict(self):
-    #     """
-    #     transform ring list to a dict
-    #     """
-    #     for item in self.ring:
-    #         public_key = item['public_key']
-    #         key = (public_key['n'], public_key['e'])
-    #         self.ring_dict[key] = item
+    def broadcast_initial_transactions(self):
+        ...
 
     def set_ring_dict(self, ring):
         self.ring_dict = ring
@@ -143,12 +138,6 @@ class node:
     
     def set_UTXOs(self, id, nbcList):
         self.UTXOs[id] = nbcList
-
-    # def get_ring(self):
-    #     return self.ring
-    
-    # def set_ring(self, ring):
-    #     self.ring = ring
 
     def get_blockchain(self):
         return self.blockchain

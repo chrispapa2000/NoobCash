@@ -84,18 +84,21 @@ def get_participants_info():
         # node.ring_to_dict()
         return jsonify("OK"), 200
     
-@app.route('/broadcast_blockchain', methods=['GET'])
-def route_broadcast_blockchain():
+@app.route('/broadcast_initial_state', methods=['GET'])
+def broadcast_initial_state():
     if node.get_id_count() == number_of_nodes - 1:
         node.broadcast_blockchain()
-        print("broadcasted")
+        print("broadcasted blockchain")
+        node.broadcast_initial_transactions()
+
     return jsonify("OK"), 200
 
 @app.route('/get_initial_blockchain', methods=['POST'])
 def route_get_initial_blockchain():
     f = request.files['blockchain_file']
-    f.save(f"tempdir/{f.filename}")
-    node.get_blockchain().from_pickle(f"{f.filename}", basedir="tempdir")
+    # f.save(f"tempdir/{f.filename}")
+    # node.get_blockchain().from_pickle(f"{f.filename}", basedir="tempdir")
+    node.blockchain = pickle.loads(f.read())
     print(node.get_blockchain().get_chain())
     return jsonify("OK"), 200
     # os.remove(f"tempdir/{f.filename}")
