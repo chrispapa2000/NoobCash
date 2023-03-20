@@ -114,13 +114,29 @@ def get_initial_transactions():
         print(t.sender_address) 
     return jsonify("OK"), 200
 
-# @app.route('/get_transaction/', methods=['GET'])
-# def get_transaction():
-#     f = request.files['transaction_file']
-#     f.save(f"tempdir/{f.filename}")
-#     t = transaction.Transaction.from_pickle(filename=f.filename, basedir='tempdir')
-#     node.validate_transaction(t)
-#     return jsonify("OK"), 200
+@app.route('/get_transaction', methods=['POST'])
+def get_transaction():
+    f = request.files['transaction_file']
+    received_transaction = pickle.loads(f.read())
+    print(received_transaction)
+
+    # decide what to do with the received transaction
+
+@app.route('/get_block', methods=['POST'])
+def get_block():
+    f = request.files['block_file']
+    received_block = pickle.loads(f.read())
+    print(received_block)
+
+    # decide what to do with the received block
+
+@app.route('/get_chain', methods=['POST'])
+def get_chain():
+    f = request.files['chain_file']
+    received_chain = pickle.loadds(f.read())
+    print(received_chain)
+
+    # decide what to do with the received chain
 
 
     

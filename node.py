@@ -236,14 +236,17 @@ class node:
 
         
 
-    def broadcast_transaction(self, trans:Transaction):
-        for other_node in self.get_ring():
-            url = 'http://'+other_node["remote_ip"]+':'+other_node["remote_port"]+'/get_transaction'
-            trans.to_pickle("trans.pkl")
-            files = {'transaction_file': open(f"pickles/trans.pkl",'rb')}
-            response = requests.post(url, files=files)
+    def broadcast_transaction(self, the_transaction:Transaction):
+        """
+        broadcast a new transaction crafted by this node
+        """
+        for other_node in self.ring_dict.values():
+            if other_node['id'] != self.id:
+                url = 'http://'+other_node["remote_ip"]+':'+other_node["remote_port"]+'/get_transaction'
+                files = {'transaction_file' : pickle.dumps(the_transaction)}
+                response = requests.post(url, files=files)
 
-    # test
+
 
     def verify_signature(self, trans:Transaction):
         #use of signature and NBCs balance
@@ -313,16 +316,20 @@ class node:
 
 
 
-    def broadcast_block():
-        pass
-
+    def broadcast_block(self, the_block:block.Block):
+        """
+        broadcast a new block mined by this node
+        """
+        for other_node in self.ring_dict.values():
+            if other_node['id'] != self.id:
+                url = 'http://'+other_node["remote_ip"]+':'+other_node["remote_port"]+'/get_block'
+                files = {'block_file' : pickle.dumps(the_block)}
+                response = requests.post(url, files=files)
 
         
 
     # def valid_proof(.., difficulty=MINING_DIFFICULTY):
     # 	pass
-
-
 
 
     # #concencus functions
