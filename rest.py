@@ -54,7 +54,7 @@ def participate(remote_ip, remote_port, n, e):
         print(f"key: {a}")
         print(b)
         print()
-    print("===============================================================================")
+    print("==============================================================================================================")
 
     # return response
     return jsonify(resp), 200
@@ -81,6 +81,7 @@ def get_participants_info():
 
         node.ring_dict = ring
         print(node.ring_dict)
+        print("==============================================================================================================")
         # node.ring_to_dict()
         return jsonify("OK"), 200
     
@@ -100,17 +101,28 @@ def route_get_initial_blockchain():
     # node.get_blockchain().from_pickle(f"{f.filename}", basedir="tempdir")
     node.blockchain = pickle.loads(f.read())
     print(node.get_blockchain().get_chain())
+    print("==============================================================================================================")
     return jsonify("OK"), 200
     # os.remove(f"tempdir/{f.filename}")
     # node.set_blockchain(blkchain)
 
-@app.route('/get_transaction/', methods=['GET'])
-def get_transaction():
-    f = request.files['transaction_file']
-    f.save(f"tempdir/{f.filename}")
-    t = transaction.Transaction.from_pickle(filename=f.filename, basedir='tempdir')
-    node.validate_transaction(t)
+@app.route('/get_initial_transactions', methods=['POST'])
+def get_initial_transactions():
+    f = request.files['initial_transactions_file']
+    node.transaction_pool = pickle.loads(f.read())
+    for t in node.transaction_pool:
+        print(t.sender_address) 
     return jsonify("OK"), 200
+
+# @app.route('/get_transaction/', methods=['GET'])
+# def get_transaction():
+#     f = request.files['transaction_file']
+#     f.save(f"tempdir/{f.filename}")
+#     t = transaction.Transaction.from_pickle(filename=f.filename, basedir='tempdir')
+#     node.validate_transaction(t)
+#     return jsonify("OK"), 200
+
+
     
 
 

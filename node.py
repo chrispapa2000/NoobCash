@@ -113,7 +113,13 @@ class node:
                 response = requests.post(url, files=files)
 
     def broadcast_initial_transactions(self):
-        ...
+        for other_node in self.ring_dict.values():
+            if other_node['id'] != self.id:
+                url = 'http://'+other_node["remote_ip"]+':'+other_node["remote_port"]+'/get_initial_transactions'
+                files = {'initial_transactions_file': pickle.dumps(self.transaction_pool)}
+                response = requests.post(url, files=files)
+
+        
 
     def set_ring_dict(self, ring):
         self.ring_dict = ring
