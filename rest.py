@@ -10,6 +10,7 @@ from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
 import json
 import os
+import pickle
 
 
 # global vars
@@ -45,7 +46,9 @@ def participate(remote_ip, remote_port, n, e):
     node.transaction_pool.appendleft(t)
     
     print("received subscription request")
-    print("current ring:", node.ring)
+    print()
+    print("current ring:", node.ring_dict)
+    print()
     print(f"current transaction pool: {node.transaction_pool}")
     for (a,b) in node.UTXOs.items():
         print(f"key: {a}")
@@ -69,13 +72,16 @@ def get_participants_info():
         # print(request.json['ring'])
         # print(request.files)
         f = request.files
-        ringObj = json.loads(request.files['ring'].read())
+        print(f)
+        ring = pickle.loads(request.files['ring'].read())
+        print(ring)
        
         # for obj in ringObj['ring']:
         #     obj['public_key'] = obj['public_key'].replace("received_keys", "other_received_keys")
 
-        node.set_ring(ringObj['ring'])
-        print(node.get_ring())
+        node.ring_dict = ring
+        print(node.ring_dict)
+        # node.ring_to_dict()
         return jsonify("OK"), 200
     
 @app.route('/broadcast_blockchain', methods=['GET'])
@@ -129,10 +135,10 @@ if __name__ == '__main__':
     # only executed for bootstrap node
     if args.bootstrap == 1:
         number_of_nodes = args.number_nodes
-        node = node.node(number_of_nodes=number_of_nodes, host=host, port=port, id=id)
+        node = node.node(number_of_nodes=number_of_nodes, host=host, port=port, id=0)
         # initialize block chain
         node.initialize_blockchain()
-        node.register_node_to_ring(id=0, public_key=node.get_my_public_key_tuple(), remote_ip=host, remote_port=str(port), balance=0)
+        node.register_node_to_ring(id=0, public_key=node.get_my_public_key_tuple(), remote_ip=host, remote_port=str(port), balance=100*number_of_nodes)
 
 
     # executed for all non-bootstrap nodes

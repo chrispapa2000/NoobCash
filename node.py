@@ -10,6 +10,8 @@ import os
 from Crypto.PublicKey import RSA
 # from queue import Queue
 from collections import deque
+from threading import Lock
+import pickle
 
 
 class node:
@@ -29,10 +31,10 @@ class node:
 
         self.current_id_count = 0
 
-        if id:
-            self.id = id
+        self.id = id
 
-        self.ring = []
+        # self.ring = []
+        self.ring_dict = dict()
 
         # we store UTXOs for every node 
         self.UTXOs = dict()
@@ -42,6 +44,13 @@ class node:
         self.blockchain = Blockchain()
 
         self.transaction_pool = deque() 
+
+        # locks
+        self.transaction_pool_lock = Lock()
+        self.blockchain_lock = Lock()
+        self.current_block_lock = Lock()
+        self.balances_lock = Lock() 
+        self.UTXO_lock = Lock()
 
     #---Initialization Functions---
 
@@ -80,17 +89,19 @@ class node:
     def broadcast_participants(self):
         # get all pub key files names 
         files = dict()
-        files["ring"]=json.dumps({"ring":self.get_ring()}) 
+        files["ring"]=pickle.dumps(self.ring_dict) 
 
         # files = {'file1': open('report.xls', 'rb'), 'file2': open('otherthing.txt', 'rb')}
-        for other_node in self.get_ring():
+        for other_node in self.ring_dict.values():
             if other_node['id'] != self.id:
+                print(other_node)
                 url = 'http://'+other_node["remote_ip"]+':'+other_node["remote_port"]+'/get_participants_info'
                 response = requests.post(url, files=files)
+        # self.ring_to_dict()
     
     # function that broadcasts the initial blockhain from the bootstrap node to the other nodes 
     def broadcast_blockchain(self):
-        for other_node in self.get_ring():
+        for other_node in self.ring_dict.values():
             if other_node['id'] != self.id:
                 url = 'http://'+other_node["remote_ip"]+':'+other_node["remote_port"]+'/get_initial_blockchain'
                 blkchain = self.get_blockchain()
@@ -99,6 +110,18 @@ class node:
                 self.get_blockchain().to_pickle(filename="blockchain.pkl")
                 files = {'blockchain_file': open(f"pickles/blockchain.pkl",'rb')}
                 response = requests.post(url, files=files)
+
+    # def ring_to_dict(self):
+    #     """
+    #     transform ring list to a dict
+    #     """
+    #     for item in self.ring:
+    #         public_key = item['public_key']
+    #         key = (public_key['n'], public_key['e'])
+    #         self.ring_dict[key] = item
+
+    def set_ring_dict(self, ring):
+        self.ring_dict = ring
 
 
 
@@ -121,11 +144,11 @@ class node:
     def set_UTXOs(self, id, nbcList):
         self.UTXOs[id] = nbcList
 
-    def get_ring(self):
-        return self.ring
+    # def get_ring(self):
+    #     return self.ring
     
-    def set_ring(self, ring):
-        self.ring = ring
+    # def set_ring(self, ring):
+    #     self.ring = ring
 
     def get_blockchain(self):
         return self.blockchain
@@ -158,8 +181,16 @@ class node:
             'remote_port':remote_port,
             'balance':balance
         } 
-        self.ring.append(new_node)
-        pass
+        # self.ring.append(new_node)
+        self.ring_dict[(n,e)] = new_node
+        
+    def update_balance(self, public_key, amount):
+        self.balances_lock.acquire()
+        node_obj = self.ring_dict[public_key]
+        node_obj['balance'] += amount
+        self.ring_dict[public_key] = node_obj
+        self.balances_lock.release()
+
 
     # def create_transaction(sender_address, receiver_address, signature):
     def create_transaction(self, sender_address, receiver_address, private_key,value,do_broadcast=True):
@@ -196,6 +227,11 @@ class node:
         
         # add to block
         # self.current_block.add_transaction(trans)
+
+        # update balances
+
+        self.update_balance(sender_address, -value)
+        self.update_balance(receiver_address, value)
 
         # broadcast
         if do_broadcast:
