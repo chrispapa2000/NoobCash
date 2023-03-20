@@ -8,8 +8,8 @@ from blockchain import Blockchain
 import json
 import os
 from Crypto.PublicKey import RSA
-from queue import Queue
-
+# from queue import Queue
+from collections import deque
 
 
 class node:
@@ -41,7 +41,7 @@ class node:
 
         self.blockchain = Blockchain()
 
-        self.mempool = Queue() 
+        self.transaction_pool = deque() 
 
     #---Initialization Functions---
 
@@ -69,10 +69,12 @@ class node:
 
         # add the first transaction to the block
         genesis_block.add_transaction(t0)
-        genesis_block.setNonce(0)
+        genesis_block.set_nonce(0)
 
         # add the genesis block to the blockchain
         self.blockchain.add_block(genesis_block)
+
+        self.UTXOs[self.get_my_public_key_tuple()] = [{"transaction_id":0, "receiver_address":0, "amount":100*self.number_of_nodes}]
 
     # function that broadcast info gathered by the bootstrap node to all other nodes
     def broadcast_participants(self):
@@ -138,8 +140,11 @@ class node:
         #create a wallet for this node, with a public key and a private key
         self.wallet = wallet.wallet()
 
-    def get_key_from_tuple(key_tuple):
-        key = RSA.construct(key_tuple)
+    def get_key_from_tuple(self,n,e,d=None):
+        if not d:
+            key = RSA.construct((n,e))
+        else:
+            key = RSA.construct((n,e,d))
         return key.public_key()
 
     def register_node_to_ring(self, id, public_key, remote_ip, remote_port, balance=0):
@@ -157,7 +162,7 @@ class node:
         pass
 
     # def create_transaction(sender_address, receiver_address, signature):
-    def create_transaction(self, sender_address, receiver_address, private_key,value):
+    def create_transaction(self, sender_address, receiver_address, private_key,value,do_broadcast=True):
         #remember to broadcast it
         
         # find UTXOs to send
@@ -165,30 +170,43 @@ class node:
         total = value
         transaction_inputs = []
 
+        # calc transaction inputs
         for item in myUTXOs:
             total -= item["amount"]
             transaction_inputs.append(item)
             if total <= 0:
                 break
         
-        myUTXOs = list(set(myUTXOs).difference(set(transaction_inputs)))
-        # update your UTXOs
-        self.set_UTXOs(sender_address, myUTXOs)
 
         # initialize transaction
         trans = Transaction(sender_address=sender_address, recipient_address=receiver_address, sender_private_key=private_key, value=value, 
               transaction_inputs=transaction_inputs)
         
+        # remove spent UTXOs from your UTXOS
+        myUTXOs = [utxo for utxo in myUTXOs if utxo not in transaction_inputs]
+        self.set_UTXOs(sender_address, myUTXOs)
+        
+        transaction_outputs = trans.to_dict()['transaction_outputs']
+        for output in transaction_outputs:
+            receiver = output['receiver_address']
+            utxos = self.get_UTXOs(receiver)
+            utxos.append(output)
+            self.set_UTXOs(receiver, utxos)
+
+        
         # add to block
         # self.current_block.add_transaction(trans)
 
         # broadcast
-        self.broadcast_transaction(trans)
+        if do_broadcast:
+            self.broadcast_transaction(trans)
+
+        return trans
 
         
 
     def broadcast_transaction(self, trans:Transaction):
-        for other_node in node.get_ring():
+        for other_node in self.get_ring():
             url = 'http://'+other_node["remote_ip"]+':'+other_node["remote_port"]+'/get_transaction'
             trans.to_pickle("trans.pkl")
             files = {'transaction_file': open(f"pickles/trans.pkl",'rb')}

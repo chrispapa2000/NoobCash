@@ -37,12 +37,21 @@ def participate(remote_ip, remote_port, n, e):
 
     # save new node's data
     node.register_node_to_ring(id, (int(n),int(e)), remote_ip, remote_port, balance=0)
+    node.UTXOs[(int(n),int(e))]=[]
     resp = {"id":node.current_id_count}
+    (my_n,my_e) = node.get_my_public_key_tuple()
 
-    print("_____________________________")
+    t = node.create_transaction(sender_address=(my_n,my_e), receiver_address=(int(n), int(e)), private_key=node.wallet.get_private_key(), value=100, do_broadcast=False)
+    node.transaction_pool.appendleft(t)
+    
     print("received subscription request")
     print("current ring:", node.ring)
-    print("_____________________________")
+    print(f"current transaction pool: {node.transaction_pool}")
+    for (a,b) in node.UTXOs.items():
+        print(f"key: {a}")
+        print(b)
+        print()
+    print("===============================================================================")
 
     # return response
     return jsonify(resp), 200
@@ -86,9 +95,8 @@ def route_get_initial_blockchain():
     # os.remove(f"tempdir/{f.filename}")
     # node.set_blockchain(blkchain)
 
-# get all transactions in the blockchain
 @app.route('/get_transaction/', methods=['GET'])
-def get_transactions():
+def get_transaction():
     f = request.files['transaction_file']
     f.save(f"tempdir/{f.filename}")
     t = transaction.Transaction.from_pickle(filename=f.filename, basedir='tempdir')
@@ -124,6 +132,7 @@ if __name__ == '__main__':
         node = node.node(number_of_nodes=number_of_nodes, host=host, port=port, id=id)
         # initialize block chain
         node.initialize_blockchain()
+        node.register_node_to_ring(id=0, public_key=node.get_my_public_key_tuple(), remote_ip=host, remote_port=str(port), balance=0)
 
 
     # executed for all non-bootstrap nodes
