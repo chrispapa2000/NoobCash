@@ -41,20 +41,20 @@ def participate(remote_ip, remote_port, n, e):
     node.UTXOs[(int(n),int(e))]=[]
     resp = {"id":node.current_id_count}
     (my_n,my_e) = node.get_my_public_key_tuple()
-
-    t = node.create_transaction(sender_address=(my_n,my_e), receiver_address=(int(n), int(e)), private_key=node.wallet.get_private_key(), value=100, do_broadcast=False)
-    node.transaction_pool.appendleft(t)
+    print("hello")
+    val = node.create_transaction(sender_address=(my_n,my_e), receiver_address=(int(n), int(e)), private_key=node.wallet.get_private_key(), value=100, do_broadcast=False)
+    # node.transaction_pool.appendleft(t)
     
     print("received subscription request")
     print()
     print("current ring:", node.ring_dict)
     print()
-    print(f"current transaction pool: {node.transaction_pool}")
-    for (a,b) in node.UTXOs.items():
-        print(f"key: {a}")
-        print(b)
-        print()
-    print("==============================================================================================================")
+        # print(f"current transaction pool: {node.transaction_pool}")
+        # for (a,b) in node.UTXOs.items():
+        #     print(f"key: {a}")
+        #     print(b)
+        #     print()
+        # print("==============================================================================================================")
 
     # return response
     return jsonify(resp), 200
@@ -81,6 +81,9 @@ def get_participants_info():
 
         node.ring_dict = ring
         print(node.ring_dict)
+        for key in node.ring_dict.keys():
+            node.UTXOs[key] = []
+
         print("==============================================================================================================")
         # node.ring_to_dict()
         return jsonify("OK"), 200
@@ -110,8 +113,22 @@ def route_get_initial_blockchain():
 def get_initial_transactions():
     f = request.files['initial_transactions_file']
     node.transaction_pool = pickle.loads(f.read())
+
     for t in node.transaction_pool:
-        print(t.sender_address) 
+        outputs = t.transaction_outputs
+        for output in outputs:
+            receiver = output['receiver_address']
+            node.UTXOs[receiver].append(output)
+
+    for t in node.transaction_pool:
+        inputs = t.transaction_inputs
+        for input in inputs:
+            receiver = input['receiver_address']
+            if input in node.UTXOs[receiver]:
+                node.UTXOs[receiver].remove(input)
+    
+    print("UTXOs:", node.UTXOs)
+
     return jsonify("OK"), 200
 
 @app.route('/get_transaction', methods=['POST'])
@@ -119,8 +136,13 @@ def get_transaction():
     f = request.files['transaction_file']
     received_transaction = pickle.loads(f.read())
     print(received_transaction)
+    node.validate_transaction(received_transaction)
+    print("transaction pool:", node.transaction_pool)
+    print()
 
     # decide what to do with the received transaction
+
+    return jsonify("OK"), 200
 
 @app.route('/get_block', methods=['POST'])
 def get_block():
@@ -145,12 +167,13 @@ def get_chain():
 def get_transaction_from_cli(recipient_id, amount):
     recipient_id, amount = int(recipient_id), int(amount)
     print(f"transfer {amount} noobcash coins to {recipient_id}")
+    recipient_key = node.get_pubkey_by_id(recipient_id)
+    my_key = node.get_pubkey_by_id(node.id)
+    node.create_transaction(sender_address=my_key, receiver_address=recipient_key, private_key=node.wallet.get_private_key(), value=amount, do_broadcast=True)
+    print("transaction pool:", node.transaction_pool)
+    print()
     return jsonify("OK"), 200
     
-
-    
-
-
 # get all transactions in the blockchain
 @app.route('/transactions/get', methods=['GET'])
 def get_transactions():
@@ -158,8 +181,6 @@ def get_transactions():
 
     response = {'transactions': transactions}
     return jsonify(response), 200
-
-
 
 
 # run it once for every node

@@ -125,20 +125,44 @@ class Transaction:
 
 # for testing 
 def main():
-    t = Transaction(1,RSA.generate(2048),2,1,[{"transaction_id":1, "receiver_address":1, "amount":1}])
+    sender = RSA.generate(2048)
+    sender_tup = (sender.n, sender.e)
+    receiver = RSA.generate(2048)
+    receiver_tup = (receiver.n, receiver.e)
+    t = Transaction(sender_address=sender_tup, recipient_address=receiver_tup, sender_private_key=sender, value=3, transaction_inputs=
+                    [{"transaction_id":"243", "receiver_address":sender_tup, "amount":10}])
+    
+    trans_dict = t.to_dict()
+    print(trans_dict)
+    # signer object
+    (n,e) = trans_dict['sender_address']
+    singer = PKCS1_v1_5.new(RSA.construct((n,e)))
+    # hash object
+    hash_object = trans_dict["transaction_id"]
+    #signature
+    signature = trans_dict["signature"]
+
+    # verify
+    try:
+        singer.verify(hash_object, signature=signature)
+        print("Succesful Verification")
+        return True
+    except:
+        print("Problem Verifying")
+        return False
     # print(t.to_dict())
 
-    t.to_pickle(filename='transaction.pkl')
+    # t.to_pickle(filename='transaction.pkl')
     
-    t1 = Transaction(6,RSA.generate(2048),2,1,[{"transaction_id":3, "receiver_address":1, "amount":1}])
-    t1.from_pickle(filename='transaction.pkl')
-    for key in t.to_dict().keys():
-        if t.to_dict()[key] != t1.to_dict()[key]:
-            print(False)
-            return
-    print(True)
+    # t1 = Transaction(6,RSA.generate(2048),2,1,[{"transaction_id":3, "receiver_address":1, "amount":1}])
+    # t1.from_pickle(filename='transaction.pkl')
+    # for key in t.to_dict().keys():
+    #     if t.to_dict()[key] != t1.to_dict()[key]:
+    #         print(False)
+    #         return
+    # print(True)
 
-    print(RSA.generate(2048).public_key)
+    # print(RSA.generate(2048).public_key)
 
 
 if __name__=="__main__":
