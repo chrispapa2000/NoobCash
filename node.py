@@ -432,6 +432,12 @@ class node:
 
             # self.broadcast_block(self.current_block)
         self.blockchain.add_block(self.current_block)
+
+        # broadcast the block
+        t = Thread(target=self.broadcast_block, args=(self.current_block,))
+        t.start()
+
+        # create a new one
         previousHash = self.current_block.hash
         new_ind = self.blockchain.get_length()
         self.current_block = block.Block(index=new_ind, previousHash=previousHash)
@@ -448,7 +454,6 @@ class node:
                 url = 'http://'+other_node["remote_ip"]+':'+other_node["remote_port"]+'/get_block'
                 files = {'block_file' : pickle.dumps(the_block)}
                 response = requests.post(url, files=files)
-
 
 
     def validate_block(self, the_block:block.Block):
@@ -486,6 +491,16 @@ class node:
             pass
 
         return True
+    
+    def on_new_block_arrival(self, the_block:block.Block):
+        self.blockchain_lock.acquire()
+        if self.validate_block(the_block=the_block):
+            self.blockchain.add_block(the_block)
+        else:
+            self.resolve_conflicts()
+        self.blockchain_lock.release()
+        
+
 
 
     # def valid_proof(.., difficulty=MINING_DIFFICULTY):
@@ -499,9 +514,10 @@ class node:
     # 	pass
 
 
-    # def resolve_conflicts(self):
-    # 	#resolve correct chain
-    # 	pass
+    def resolve_conflicts(self):
+    	# resolve correct chain
+        
+    	pass
 
 
 
