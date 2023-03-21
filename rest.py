@@ -181,8 +181,12 @@ def get_transaction_from_cli(recipient_id, amount):
     # print(f"transfer {amount} noobcash coins to {recipient_id}")
     recipient_key = node.get_pubkey_by_id(recipient_id)
     my_key = node.get_pubkey_by_id(node.id)
-    node.create_transaction(sender_address=my_key, receiver_address=recipient_key, private_key=node.wallet.get_private_key(), value=amount, do_broadcast=True)
-    # print("transaction pool:", node.transaction_pool)
+    flag = node.create_transaction(sender_address=my_key, receiver_address=recipient_key, private_key=node.wallet.get_private_key(), value=amount, do_broadcast=True)
+    
+    if not flag:
+        # not enough money
+        return jsonify("OK"), 200
+    
     print()
     print("--Creating transaction--")
     print(f"transaction from {node.id} to {recipient_id} with amount={amount}")

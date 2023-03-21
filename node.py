@@ -198,6 +198,11 @@ class node:
         self.UTXO_lock.acquire()
         self.balances_lock.acquire()
         self.transaction_pool_lock.acquire()
+
+        #check if we have enough money
+        if self.ring_dict[sender_address]['balance'] < value:
+            print("there is not enough money for this transaction")
+            return False
         
         # find UTXOs to send
         myUTXOs = self.get_UTXOs(sender_address)
@@ -323,7 +328,7 @@ class node:
         senderUTXOs = self.UTXOs[sender]
         senderUTXOs = [u for u in senderUTXOs if u not in trans_dict["transaction_inputs"]]
         self.UTXOs[sender] = senderUTXOs
-        
+
         for output in trans_dict["transaction_outputs"]:
             receiver = output['receiver_address']
             self.UTXOs[receiver].append(output)
