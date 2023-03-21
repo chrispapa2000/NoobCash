@@ -4,7 +4,7 @@ import node
 import transaction
 from blockchain import Blockchain
 from fileinput import filename
-
+from termcolor import colored
 
 from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
@@ -150,17 +150,17 @@ def get_transaction():
     node.validate_transaction(received_transaction)
     # print("transaction pool:", node.transaction_pool)
     print()
-    print("--Received Transaction")
-    print("Current Balances:")
+    print(colored("--Received Transaction", 'blue'))
+    print(colored("Current Balances:", 'blue'))
     for item in node.ring_dict.values():
-        print(f"id: {item['id']} has {item['balance']}")
+        print(colored(f"id: {item['id']} has {item['balance']}", 'blue'))
     print()
-    print("length of UTXOs:")
-    print(len(node.UTXOs))
+    print(colored("length of UTXOs:", 'blue'))
+    print(colored(len(node.UTXOs), 'blue'))
     print()
-    print("length of transaction pool:")
-    print(len(node.transaction_pool))
-    print("--Received Transaction End")
+    print(colored("length of transaction pool:", 'blue'))
+    print(colored(len(node.transaction_pool), 'blue'))
+    print(colored("--Received Transaction End", 'blue'))
     print()
 
     # decide what to do with the received transaction
@@ -199,17 +199,17 @@ def get_transaction_from_cli(recipient_id, amount):
         return jsonify("OK"), 200
     
     print()
-    print("--Creating transaction--")
-    print(f"transaction from {node.id} to {recipient_id} with amount={amount}")
-    print("Current Balances:")
+    print(colored("--Creating transaction--", 'green'))
+    print(colored(f"transaction from {node.id} to {recipient_id} with amount={amount}", 'green'))
+    print(colored("Current Balances:", 'green'))
     for item in node.ring_dict.values():
-        print(f"id: {item['id']} has {item['balance']}")
-    print("length of UTXOs:")
-    print(len(node.UTXOs))
+        print(colored(f"id: {item['id']} has {item['balance']}", 'green'))
+    print(colored("length of UTXOs:", 'green'))
+    print(colored(len(node.UTXOs), 'green'))
     print()
-    print("length of transaction pool:")
-    print(len(node.transaction_pool))
-    print("--Creating transaction End--")
+    print(colored("length of transaction pool:", 'green'))
+    print(colored(len(node.transaction_pool), 'green'))
+    print(colored("--Creating transaction End--", 'green'))
     print()
     return jsonify("OK"), 200
     

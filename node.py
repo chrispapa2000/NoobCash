@@ -16,6 +16,7 @@ import binascii
 from threading import Thread
 import time
 import random
+from termcolor import colored
 
 
 class node:
@@ -206,14 +207,15 @@ class node:
                     # take a short nap waiting for new transactions
                     time.sleep(0.1)
             self.mine_block()
-            print("current transaction pool:", self.transaction_pool)
+            # print("current transaction pool:", self.transaction_pool)
             self.current_block_lock.release()
-
-            print("--Completed a new block--")
             print()
-            print(f"current length of the blockchain: {len(self.blockchain.get_chain())}")
+            print(colored("--Completed a new block--", "red"))
             print()
-            print("--End Completed a new block--")
+            print(colored(f"current length of the blockchain: {len(self.blockchain.get_chain())}", 'red'))
+            print()
+            print(colored("--End Completed a new block--", 'red'))
+            print()
 
             time.sleep(0.1)
 
@@ -335,7 +337,7 @@ class node:
         try:
             singer.verify(hash_object, signature=signature)
             if hash_digest == hash_object.digest():
-                print("Succesful Verification")
+                # print("Succesful Verification")
                 return True
             else:
                 print("Problem Verifying")
