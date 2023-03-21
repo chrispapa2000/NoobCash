@@ -137,7 +137,7 @@ def get_initial_transactions():
 
     # start mining thread
     node.current_block = block.Block(index=1, previousHash=node.blockchain.get_block_hash(block_index=0))
-    node.start_mining()
+    # node.start_mining()
 
 
     return jsonify("OK"), 200
@@ -171,11 +171,16 @@ def get_transaction():
 def get_block():
     f = request.files['block_file']
     received_block = pickle.loads(f.read())
-    print(received_block)
+    # print(received_block)
+    # if node.validate_block(the_block=received_block):
+    #     node.blockchain.add_block(received_block)
+    #     print("inserted new block")
+
+    t = threading.Thread(target=node.on_new_block_arrival, args=(received_block,))
 
     # decide what to do with the received block
-    block_validation_thread = threading.Thread(target=node.validate_block, args=(received_block,))
-    block_validation_thread.start()
+    # block_validation_thread = threading.Thread(target=node.validate_block, args=(received_block,))
+    # block_validation_thread.start()
     return jsonify("OK"), 200
 
 @app.route('/get_chain', methods=['POST'])

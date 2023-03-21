@@ -70,10 +70,10 @@ class Block:
         return self.nonce
 
     def get_transactions(self):
-        return self.transactions[:]
+        return self.listOfTransactions[:]
 
     def set_transactions(self, transactions):
-        self.transactions = transactions
+        self.listOfTransactions = transactions
 
     def add_transaction(self, trans: transaction.Transaction, blkchain=None):
         if self.is_filled():
