@@ -138,6 +138,12 @@ def get_chain():
 
     # decide what to do with the received chain
 
+@app.route('/get_transaction_from_cli/<recipient_id>/<amount>', methods=['POST'])
+def get_transaction_from_cli(recipient_id, amount):
+    recipient_id, amount = int(recipient_id), int(amount)
+    print(f"transfer {amount} noobcash coins to {recipient_id}")
+    return jsonify("OK"), 200
+    
 
     
 
@@ -149,6 +155,8 @@ def get_transactions():
 
     response = {'transactions': transactions}
     return jsonify(response), 200
+
+
 
 
 # run it once for every node
