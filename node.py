@@ -372,8 +372,8 @@ class node:
             #hash1 = hashlib.sha256(whole_str.encode()).hexdigest()
             self.current_block.calc_hash()
 
-       #nonce found for required proof
-       self.broadcast_block(self.current_block)
+            #nonce found for required proof
+            self.broadcast_block(self.current_block)
 
 
 
