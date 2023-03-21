@@ -41,20 +41,14 @@ def participate(remote_ip, remote_port, n, e):
     node.UTXOs[(int(n),int(e))]=[]
     resp = {"id":node.current_id_count}
     (my_n,my_e) = node.get_my_public_key_tuple()
-    print("hello")
     val = node.create_transaction(sender_address=(my_n,my_e), receiver_address=(int(n), int(e)), private_key=node.wallet.get_private_key(), value=100, do_broadcast=False)
     # node.transaction_pool.appendleft(t)
     
-    print("received subscription request")
-    print()
-    print("current ring:", node.ring_dict)
-    print()
-        # print(f"current transaction pool: {node.transaction_pool}")
-        # for (a,b) in node.UTXOs.items():
-        #     print(f"key: {a}")
-        #     print(b)
-        #     print()
-        # print("==============================================================================================================")
+    # print("received subscription request")
+    # print()
+    # print("current ring:", node.ring_dict)
+    # print()
+
 
     # return response
     return jsonify(resp), 200
@@ -69,30 +63,25 @@ def route_broadcast_participants():
 @app.route('/get_participants_info/', methods=['POST', 'GET'])
 def get_participants_info():
     if request.method == 'POST':    
-        # print(request.json['ring'])
-        # print(request.files)
         f = request.files
-        print(f)
         ring = pickle.loads(request.files['ring'].read())
-        print(ring)
+        # print(ring)
        
         # for obj in ringObj['ring']:
         #     obj['public_key'] = obj['public_key'].replace("received_keys", "other_received_keys")
 
         node.ring_dict = ring
-        print(node.ring_dict)
+        # print(node.ring_dict)
         for key in node.ring_dict.keys():
             node.UTXOs[key] = []
 
-        print("==============================================================================================================")
-        # node.ring_to_dict()
         return jsonify("OK"), 200
     
 @app.route('/broadcast_initial_state', methods=['GET'])
 def broadcast_initial_state():
     if node.get_id_count() == number_of_nodes - 1:
         node.broadcast_blockchain()
-        print("broadcasted blockchain")
+        # print("broadcasted blockchain")
         node.broadcast_initial_transactions()
 
     return jsonify("OK"), 200
@@ -103,8 +92,7 @@ def route_get_initial_blockchain():
     # f.save(f"tempdir/{f.filename}")
     # node.get_blockchain().from_pickle(f"{f.filename}", basedir="tempdir")
     node.blockchain = pickle.loads(f.read())
-    print(node.get_blockchain().get_chain())
-    print("==============================================================================================================")
+    # print(node.get_blockchain().get_chain())
     return jsonify("OK"), 200
     # os.remove(f"tempdir/{f.filename}")
     # node.set_blockchain(blkchain)
@@ -127,7 +115,22 @@ def get_initial_transactions():
             if input in node.UTXOs[receiver]:
                 node.UTXOs[receiver].remove(input)
     
-    print("UTXOs:", node.UTXOs)
+    # print("UTXOs:", node.UTXOs)
+    print()
+    print("--After Initialization--")
+    print("Participants:")
+    for item in node.ring_dict.values():
+        print(item)
+        print()
+    print("Blockchain:")
+    print(node.blockchain.get_chain())
+    print()
+    print("Transaction Pool:")
+    print(node.transaction_pool)
+    print("--After Initialization End--")
+    print()
+
+
 
     return jsonify("OK"), 200
 
@@ -137,7 +140,16 @@ def get_transaction():
     received_transaction = pickle.loads(f.read())
     print(received_transaction)
     node.validate_transaction(received_transaction)
-    print("transaction pool:", node.transaction_pool)
+    # print("transaction pool:", node.transaction_pool)
+    print()
+    print("--Received Transaction")
+    print("Current Balances:")
+    for item in node.ring_dict.values():
+        print(f"id: {item['id']} has {item['balance']}")
+    print()
+    print("UTXOs:")
+    print(node.UTXOs)
+    print("--Received Transaction End")
     print()
 
     # decide what to do with the received transaction
@@ -166,11 +178,18 @@ def get_chain():
 @app.route('/get_transaction_from_cli/<recipient_id>/<amount>', methods=['POST'])
 def get_transaction_from_cli(recipient_id, amount):
     recipient_id, amount = int(recipient_id), int(amount)
-    print(f"transfer {amount} noobcash coins to {recipient_id}")
+    # print(f"transfer {amount} noobcash coins to {recipient_id}")
     recipient_key = node.get_pubkey_by_id(recipient_id)
     my_key = node.get_pubkey_by_id(node.id)
     node.create_transaction(sender_address=my_key, receiver_address=recipient_key, private_key=node.wallet.get_private_key(), value=amount, do_broadcast=True)
-    print("transaction pool:", node.transaction_pool)
+    # print("transaction pool:", node.transaction_pool)
+    print()
+    print("--Creating transaction--")
+    print(f"transaction from {node.id} to {recipient_id} with amount={amount}")
+    print("Current Balances:")
+    for item in node.ring_dict.values():
+        print(f"id: {item['id']} has {item['balance']}")
+    print("--Creating transaction End--")
     print()
     return jsonify("OK"), 200
     

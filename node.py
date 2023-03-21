@@ -265,7 +265,6 @@ class node:
         #use of signature and NBCs balance
         # check signature
         trans_dict = received_transaction.to_dict()
-        print(trans_dict)
         # signer object
         (n,e) = trans_dict['sender_address']
         singer = PKCS1_v1_5.new(self.get_key_from_tuple(n,e))
@@ -321,10 +320,13 @@ class node:
                 return False
         
         # update UTXOs 
-        self.UTXOs[sender] = [u for u in self.UTXOs[sender] if u not in trans_dict["transaction_inputs"]]
+        senderUTXOs = self.UTXOs[sender]
+        senderUTXOs = [u for u in senderUTXOs if u not in trans_dict["transaction_inputs"]]
+        self.UTXOs[sender] = senderUTXOs
+        
         for output in trans_dict["transaction_outputs"]:
             receiver = output['receiver_address']
-            self.UTXOs[receiver] = self.UTXOs[receiver].append(output)
+            self.UTXOs[receiver].append(output)
 
         #update balances
         self.update_balance(trans_dict["sender_address"], -trans_dict["amount"])
