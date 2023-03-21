@@ -364,11 +364,16 @@ class node:
         #transactions = str(self.current_block.listOfTransactions)
         #static_str = prev_hash + transactions
         while self.current_block.hash[:difficulty] != proof:
+            #TODO add check if another block is received AND validated to stop mining
             
+
             self.current_block.nonce += 1
             #hash string
             #hash1 = hashlib.sha256(whole_str.encode()).hexdigest()
             self.current_block.calc_hash()
+
+       #nonce found for required proof
+       self.broadcast_block(self.current_block)
 
 
 
@@ -409,7 +414,16 @@ class node:
         if the_block.hash != current_block_hash:
             return False
         """
-        
+
+        #individual transaction validation
+        for tr in the_block.get_transactions():
+            """
+            if not self.validate_transaction(tr):   #modify function to not do the transaction so it doesn't happen twice
+                return false
+            """
+            pass
+
+        return True
 
 
     # def valid_proof(.., difficulty=MINING_DIFFICULTY):
