@@ -206,6 +206,7 @@ class node:
                     # take a short nap waiting for new transactions
                     time.sleep(0.1)
             self.mine_block()
+            print("current transaction pool:", self.transaction_pool)
             self.current_block_lock.release()
 
             print("--Completed a new block--")
@@ -428,6 +429,11 @@ class node:
             #nonce found for required proof
 
             # self.broadcast_block(self.current_block)
+        self.blockchain.add_block(self.current_block)
+        previousHash = self.current_block.hash
+        new_ind = self.blockchain.get_length()
+        self.current_block = block.Block(index=new_ind, previousHash=previousHash)
+
 
 
 
