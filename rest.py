@@ -84,6 +84,11 @@ def broadcast_initial_state():
         # print("broadcasted blockchain")
         node.broadcast_initial_transactions()
 
+        # start mining_thread
+        # node.start_mining()
+        # t = threading.Thread(target=node.mine)
+        node.start_mining()
+
     return jsonify("OK"), 200
 
 @app.route('/get_initial_blockchain', methods=['POST'])
@@ -130,6 +135,9 @@ def get_initial_transactions():
     print("--After Initialization End--")
     print()
 
+    # start mining thread
+    node.current_block = block.Block(index=1, previousHash=node.blockchain.get_block_hash(block_index=0))
+    node.start_mining()
 
 
     return jsonify("OK"), 200
@@ -173,7 +181,7 @@ def get_block():
 @app.route('/get_chain', methods=['POST'])
 def get_chain():
     f = request.files['chain_file']
-    received_chain = pickle.loadds(f.read())
+    received_chain = pickle.loads(f.read())
     print(received_chain)
 
     # decide what to do with the received chain
@@ -212,6 +220,11 @@ def get_transactions():
 
     response = {'transactions': transactions}
     return jsonify(response), 200
+
+# @app.route('/test', methods=['GET'])
+# def get_test():
+#     response = {'test': node.test}
+#     return jsonify(response), 200
 
 
 # run it once for every node

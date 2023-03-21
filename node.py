@@ -14,6 +14,8 @@ import pickle
 from Crypto.Hash import SHA
 import binascii
 from threading import Thread
+import time
+import random
 
 
 class node:
@@ -46,6 +48,10 @@ class node:
         self.blockchain = Blockchain()
 
         self.transaction_pool = deque() 
+
+        self.mining_now = False
+
+        self.current_block = block.Block(index=None, previousHash=None)
 
         # locks
         self.transaction_pool_lock = Lock()
@@ -85,6 +91,8 @@ class node:
         # add the genesis block to the blockchain
         self.blockchain.add_block(genesis_block)
 
+        self.current_block = block.Block(index=1, previousHash=genesis_block.hash)
+
         self.UTXOs[self.get_my_public_key_tuple()] = [{"transaction_id":0, "receiver_address":self.get_my_public_key_tuple(), "amount":100*self.number_of_nodes}]
 
     # function that broadcast info gathered by the bootstrap node to all other nodes
@@ -122,10 +130,8 @@ class node:
                 response = requests.post(url, files=files)
 
 
-
     def set_ring_dict(self, ring):
         self.ring_dict = ring
-
 
 
     #---Normal Class Functions---
@@ -185,6 +191,36 @@ class node:
                 } 
         # self.ring.append(new_node)
         self.ring_dict[(n,e)] = new_node
+
+    def mine(self,):
+        while True:
+            # print("Checking if we need to start mining...")
+            self.current_block_lock.acquire()
+            # fill up the current block
+            while not self.current_block.is_filled():
+                if len(self.transaction_pool):
+                    # if we have unused transactions put one of them to the block
+                    t = self.transaction_pool.pop()
+                    self.current_block.add_transaction(t)
+                else:
+                    # take a short nap waiting for new transactions
+                    time.sleep(0.1)
+            self.mine_block()
+            self.current_block_lock.release()
+
+            print("--Completed a new block--")
+            print()
+            print(f"current length of the blockchain: {len(self.blockchain.get_chain())}")
+            print()
+            print("--End Completed a new block--")
+
+            time.sleep(0.1)
+
+    def start_mining(self):
+        t = Thread(target=self.mine)
+        t.start()
+        return
+
 
     def update_balance(self, public_key, amount):
         node_obj = self.ring_dict[public_key]
@@ -378,7 +414,9 @@ class node:
         #prev_hash  = str(self.current_block.previousHash)
         #transactions = str(self.current_block.listOfTransactions)
         #static_str = prev_hash + transactions
-        while self.current_block.hash[:difficulty] != proof:
+        nonce = random.randint(0,1000000)
+        self.current_block.set_nonce(nonce=nonce)
+        while str(self.current_block.hash)[:difficulty] != proof:
             #TODO add check if another block is received AND validated to stop mining
 
 
@@ -388,7 +426,8 @@ class node:
             self.current_block.calc_hash()
 
             #nonce found for required proof
-            self.broadcast_block(self.current_block)
+
+            # self.broadcast_block(self.current_block)
 
 
 

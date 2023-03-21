@@ -38,9 +38,9 @@ class Block:
                 "previousHash": self.previousHash,
                 "timestamp": self.timestamp,
                 "capacity": self.capacity,
-                "listOfTransactions": self.listOfTransactions#,
-                #"nonce": self.nonce,
-                #"current_hash": self.current_hash
+                "listOfTransactions": self.listOfTransactions,
+                "nonce": self.nonce,
+                "hash": self.hash
                 }
         return d
 
@@ -55,7 +55,7 @@ class Block:
         # self.hash = SHA.new(data=binascii.a2b_qp(tmp))
         self.hash = hashlib.sha256(tmp.encode()).hexdigest()
         # self.hash = hash(tmp)
-        print(self.hash)
+        # print(self.hash)
 
         #self.hash = 1 # to be changed 
 
@@ -116,5 +116,12 @@ if __name__ == "__main__":
     t1 = transaction.Transaction((key1.n,key1.e), key1, (key0.n,key0.e),value=5,transaction_inputs=[{"transaction_id":4, "receiver_address":(key1.n,key1.e), "amount":10}])
     b0.add_transaction(t1)
     st = time.time()
-    b0.calc_hash()
+    nonce = random.randint(1,10000)
+    while True:
+        nonce+=1
+        b0.set_nonce(nonce=nonce)
+        b0.calc_hash()
+        if str(b0.hash).startswith("00000"):
+            break
+    print(b0.hash)
     print(time.time()-st)

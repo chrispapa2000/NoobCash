@@ -54,7 +54,7 @@ class Blockchain():
     def get_block_hash(self, block_index):
         if not self.block_exists(block_index):
             raise Exception("Block doesn't exist on blockchain!")
-        return self.list_of_blocks[block_index].hash
+        return self.list_of_blocks[block_index]['hash']
 
 
 # testing
