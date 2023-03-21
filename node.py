@@ -73,7 +73,7 @@ class node:
     def initialize_blockchain(self):
         # create first transaction
         t0 = transaction.Transaction(sender_address=0, recipient_address=self.get_my_public_key_tuple(), sender_private_key=None, value=100*self.number_of_nodes,
-                                    transaction_inputs=[{"transaction_id":0, "receiver_address":self.get_my_public_key_tuple(), "amount":100*self.number_of_nodes}])
+                                     transaction_inputs=[{"transaction_id":0, "receiver_address":self.get_my_public_key_tuple(), "amount":100*self.number_of_nodes}])
 
         # create genesis block
         genesis_block = block.Block(previousHash=1,index=0)
@@ -100,7 +100,7 @@ class node:
                 url = 'http://'+other_node["remote_ip"]+':'+other_node["remote_port"]+'/get_participants_info'
                 response = requests.post(url, files=files)
         # self.ring_to_dict()
-    
+
     # function that broadcasts the initial blockhain from the bootstrap node to the other nodes 
     def broadcast_blockchain(self):
         for other_node in self.ring_dict.values():
@@ -121,7 +121,7 @@ class node:
                 files = {'initial_transactions_file': pickle.dumps(self.transaction_pool)}
                 response = requests.post(url, files=files)
 
-        
+
 
     def set_ring_dict(self, ring):
         self.ring_dict = ring
@@ -134,25 +134,25 @@ class node:
 
     def get_id_count(self):
         return self.current_id_count	
-    
+
     def inc_id_count(self):
         self.current_id_count += 1
 
     def get_my_public_key_tuple(self):
         return self.wallet.get_public_key_tuple()
-    
+
     def get_UTXOs(self, pubkey):
         return self.UTXOs[pubkey]
-    
+
     def set_UTXOs(self, id, nbcList):
         self.UTXOs[id] = nbcList
 
     def get_blockchain(self):
         return self.blockchain
-    
+
     def set_blockchain(self, chain):
         self.blockchain.set_chain(chain)
-    
+
     def create_new_block(self, previousHash):
         self.current_block = block.Block(previousHash=previousHash)
 
@@ -166,7 +166,7 @@ class node:
         else:
             key = RSA.construct((n,e,d))
         return key.public_key()
-    
+
     def get_pubkey_by_id(self, id):
         for key in self.ring_dict.keys():
             if self.ring_dict[key]['id'] == id:
@@ -177,15 +177,15 @@ class node:
         #bottstrap node informs all other nodes and gives the request node an id and 100 NBCs
         (n,e) = public_key
         new_node = {
-            'id':id,
-            'public_key':{'n':n, 'e':e},
-            'remote_ip':remote_ip,
-            'remote_port':remote_port,
-            'balance':balance
-        } 
+                'id':id,
+                'public_key':{'n':n, 'e':e},
+                'remote_ip':remote_ip,
+                'remote_port':remote_port,
+                'balance':balance
+                } 
         # self.ring.append(new_node)
         self.ring_dict[(n,e)] = new_node
-        
+
     def update_balance(self, public_key, amount):
         node_obj = self.ring_dict[public_key]
         node_obj['balance'] += amount
@@ -203,7 +203,7 @@ class node:
         if self.ring_dict[sender_address]['balance'] < value:
             print("there is not enough money for this transaction")
             return False
-        
+
         # find UTXOs to send
         myUTXOs = self.get_UTXOs(sender_address)
         total = value
@@ -215,16 +215,16 @@ class node:
             transaction_inputs.append(item)
             if total <= 0:
                 break
-        
+
 
         # initialize transaction
         trans = Transaction(sender_address=sender_address, recipient_address=receiver_address, sender_private_key=private_key, value=value, 
-              transaction_inputs=transaction_inputs)
-        
+                            transaction_inputs=transaction_inputs)
+
         # remove spent UTXOs from your UTXOS
         myUTXOs = [utxo for utxo in myUTXOs if utxo not in transaction_inputs]
         self.set_UTXOs(sender_address, myUTXOs)
-        
+
         transaction_outputs = trans.to_dict()['transaction_outputs']
         for output in transaction_outputs:
             receiver = output['receiver_address']
@@ -232,7 +232,7 @@ class node:
             utxos.append(output)
             self.set_UTXOs(receiver, utxos)
 
-        
+
         # add to block
         # self.current_block.add_transaction(trans)
 
@@ -252,7 +252,7 @@ class node:
         self.transaction_pool_lock.release()
 
         return True
-           
+
 
     def broadcast_transaction(self, the_transaction:Transaction):
         """
@@ -277,11 +277,11 @@ class node:
         hash_digest = trans_dict["transaction_id"]
         # transaction as dict
         d = {
-            "sender_address": received_transaction.sender_address,
-            "receiver_address": received_transaction.receiver_address,
-            "amount": received_transaction.amount,
-            "transaction_inputs": received_transaction.transaction_inputs
-        }
+                "sender_address": received_transaction.sender_address,
+                "receiver_address": received_transaction.receiver_address,
+                "amount": received_transaction.amount,
+                "transaction_inputs": received_transaction.transaction_inputs
+                }
         # transaction to hash
         hash_object = SHA.new(data=binascii.a2b_qp(str(d)))
         #signature
@@ -306,15 +306,15 @@ class node:
     #     for output in transaction_outputs:
     #         receiver = output['receiver_address']
     #         self.UTXOs[receiver] = self.UTXOs['receiver'].append(output)
-        
+
 
     def validate_transaction(self, received_transaction: Transaction):
         self.UTXO_lock.acquire()
         self.balances_lock.acquire()
-        
+
         if not self.verify_signature(received_transaction=received_transaction):
             return False
-         
+
         # check NBCs balance
         trans_dict = received_transaction.to_dict()
 
@@ -323,7 +323,7 @@ class node:
         for item in trans_inputs:
             if item not in self.get_UTXOs(sender):
                 return False
-        
+
         # update UTXOs 
         senderUTXOs = self.UTXOs[sender]
         senderUTXOs = [u for u in senderUTXOs if u not in trans_dict["transaction_inputs"]]
@@ -365,7 +365,7 @@ class node:
         #static_str = prev_hash + transactions
         while self.current_block.hash[:difficulty] != proof:
             #TODO add check if another block is received AND validated to stop mining
-            
+
 
             self.current_block.nonce += 1
             #hash string
@@ -387,7 +387,7 @@ class node:
                 files = {'block_file' : pickle.dumps(the_block)}
                 response = requests.post(url, files=files)
 
-        
+
 
     def validate_block(self, the_block:block.Block):
         if not self.blockchain.block_exists(the_block.index - 1):
