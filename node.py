@@ -293,7 +293,12 @@ class node:
 
         self.mempool.put(trans)
 
-    def add_transaction_to_block(self):
+    def add_transaction_to_block(self, trans: Transaction):
+        try:
+            self.current_block.add_transaction(trans)
+        except:
+            pass
+
         #if enough transactions  mine
         if self.current_block.is_filled():
             self.mine_block()
@@ -312,7 +317,6 @@ class node:
             #hash string
             #hash1 = hashlib.sha256(whole_str.encode()).hexdigest()
             self.current_block.calc_hash()
-            #check with difficulty
 
 
 
@@ -327,6 +331,34 @@ class node:
                 response = requests.post(url, files=files)
 
         
+
+    def validate_block(self, the_block:block.Block):
+        if not self.blockchain.block_exists(the_block.index - 1):
+            return False
+        if self.blockchain.get_block_hash(the_block.index - 1) != the_block.previousHash:
+            return False
+
+        difficulty = self.blockchain.get_difficulty()
+        if the_block.hash[:difficulty] != '0'*difficulty:
+            return False
+
+        #may need to reconstruct a block to make sure calc_hash() function is correct
+        new_block = block.Block(the_block.index, the_block.previousHash, the_block.capacity, the_block.timestamp)
+        new_block.set_nonce(the_block.get_nonce())
+        new_block.set_transactions(the_block.get_transactions())
+        new_block.calc_hash()
+        if the_block.hash != new_block.hash:
+            return False
+
+        #otherwise just recalculate it
+        """
+        current_block_hash = the_block.hash
+        the_block.calc_hash()
+        if the_block.hash != current_block_hash:
+            return False
+        """
+        
+
 
     # def valid_proof(.., difficulty=MINING_DIFFICULTY):
     # 	pass

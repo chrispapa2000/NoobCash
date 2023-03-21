@@ -11,7 +11,7 @@ from flask_cors import CORS
 import json
 import os
 import pickle
-
+import threading
 
 # global vars
 port = 0
@@ -129,6 +129,9 @@ def get_block():
     print(received_block)
 
     # decide what to do with the received block
+    block_validation_thread = threading.Thread(target=node.validate_block, args=(received_block,))
+    block_validation_thread.start()
+    return jsonify("OK"), 200
 
 @app.route('/get_chain', methods=['POST'])
 def get_chain():
