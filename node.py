@@ -8,12 +8,12 @@ from blockchain import Blockchain
 import json
 import os
 from Crypto.PublicKey import RSA
-# from queue import Queue
 from collections import deque
 from threading import Lock
 import pickle
 from Crypto.Hash import SHA
 import binascii
+from threading import Thread
 
 
 class node:
@@ -199,9 +199,16 @@ class node:
         self.balances_lock.acquire()
         self.transaction_pool_lock.acquire()
 
+        # self.UTXO_lock.release()
+        # self.balances_lock.release()
+        # self.transaction_pool_lock.release()
+
         #check if we have enough money
         if self.ring_dict[sender_address]['balance'] < value:
             print("there is not enough money for this transaction")
+            self.UTXO_lock.release()
+            self.balances_lock.release()
+            self.transaction_pool_lock.release()
             return False
 
         # find UTXOs to send
@@ -241,15 +248,15 @@ class node:
         self.update_balance(sender_address, -value)
         self.update_balance(receiver_address, value)
 
-        # broadcast
-        if do_broadcast:
-            self.broadcast_transaction(trans)
-
         self.transaction_pool.appendleft(trans)
 
         self.UTXO_lock.release()
         self.balances_lock.release()
         self.transaction_pool_lock.release()
+
+        # broadcast
+        if do_broadcast:
+            self.broadcast_transaction(trans)
 
         return True
 
@@ -311,8 +318,12 @@ class node:
     def validate_transaction(self, received_transaction: Transaction):
         self.UTXO_lock.acquire()
         self.balances_lock.acquire()
+        self.transaction_pool_lock.acquire()
 
         if not self.verify_signature(received_transaction=received_transaction):
+            self.UTXO_lock.release()
+            self.balances_lock.release()
+            self.transaction_pool_lock.release()
             return False
 
         # check NBCs balance
@@ -322,6 +333,9 @@ class node:
         sender = trans_dict["sender_address"]
         for item in trans_inputs:
             if item not in self.get_UTXOs(sender):
+                self.UTXO_lock.release()
+                self.balances_lock.release()
+                self.transaction_pool_lock.release()
                 return False
 
         # update UTXOs 
@@ -338,12 +352,13 @@ class node:
         self.update_balance(trans_dict["receiver_address"], trans_dict["amount"])
 
 
-        self.transaction_pool_lock.acquire()
+        
         self.transaction_pool.appendleft(received_transaction)
-        self.transaction_pool_lock.release()
+        
 
         self.UTXO_lock.release()
         self.balances_lock.release()
+        self.transaction_pool_lock.release()
 
     def add_transaction_to_block(self, trans: Transaction):
         try:

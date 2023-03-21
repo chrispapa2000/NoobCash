@@ -147,8 +147,11 @@ def get_transaction():
     for item in node.ring_dict.values():
         print(f"id: {item['id']} has {item['balance']}")
     print()
-    print("UTXOs:")
-    print(node.UTXOs)
+    print("length of UTXOs:")
+    print(len(node.UTXOs))
+    print()
+    print("length of transaction pool:")
+    print(len(node.transaction_pool))
     print("--Received Transaction End")
     print()
 
@@ -193,6 +196,11 @@ def get_transaction_from_cli(recipient_id, amount):
     print("Current Balances:")
     for item in node.ring_dict.values():
         print(f"id: {item['id']} has {item['balance']}")
+    print("length of UTXOs:")
+    print(len(node.UTXOs))
+    print()
+    print("length of transaction pool:")
+    print(len(node.transaction_pool))
     print("--Creating transaction End--")
     print()
     return jsonify("OK"), 200
