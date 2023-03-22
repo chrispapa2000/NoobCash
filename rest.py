@@ -12,6 +12,7 @@ import json
 import os
 import pickle
 import threading
+from flask import Flask, make_response, send_file
 
 # global vars
 port = 0
@@ -137,7 +138,7 @@ def get_initial_transactions():
 
     # start mining thread
     node.current_block = block.Block(index=1, previousHash=node.blockchain.get_block_hash(block_index=0))
-    # node.start_mining()
+    node.start_mining()
 
 
     return jsonify("OK"), 200
@@ -177,24 +178,32 @@ def get_block():
     #     print("inserted new block")
 
     t = threading.Thread(target=node.on_new_block_arrival, args=(received_block,))
+    t.start()
 
     # decide what to do with the received block
     # block_validation_thread = threading.Thread(target=node.validate_block, args=(received_block,))
     # block_validation_thread.start()
     return jsonify("OK"), 200
 
-@app.route('/get_chain', methods=['GET'])   #deprecated?
-def get_chain():
-    f = request.files['chain_file']
-    received_chain = pickle.loads(f.read())
-    print(received_chain)
+# @app.route('/get_chain', methods=['GET'])   #deprecated?
+# def get_chain():
+#     f = request.files['chain_file']
+#     received_chain = pickle.loads(f.read())
+#     print(received_chain)
 
     # decide what to do with the received chain
 
 @app.route('/get_blockchain', methods=['GET'])
 def get_blockchain():
-    resp = {'blockchain':pickle.dumps(node.blockchain)}
-    return jsonify(resp), 200
+    chain = pickle.dumps(node.blockchain)
+    response = make_response(chain)
+    response.headers.set('Content-Type', 'application/octet-stream')
+    return response
+    # chain_file = open('chain.pkl', 'wb')
+    # pickle.dump(node.blockchain, file=chain_file)
+    # return send_file('chain.pkl')
+    # resp = {'blockchain':pickle.dumps(node.blockchain)}
+    # return jsonify(resp), 200
 
 
 @app.route('/get_chain_length', methods=['GET'])

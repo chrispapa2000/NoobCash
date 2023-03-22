@@ -205,6 +205,7 @@ class node:
                 else:
                     # take a short nap waiting for new transactions
                     time.sleep(0.1)
+            self.do_mining = True
             self.mine_block()
 
             time.sleep(0.1)
@@ -407,7 +408,7 @@ class node:
         proof  = '0'*difficulty
         nonce = random.randint(0,1000000)
         self.current_block.set_nonce(nonce=nonce)
-
+        self.current_block.calc_hash()
         # mine to find the correct nonce
         while str(self.current_block.hash)[:difficulty] != proof and self.do_mining:
             #TODO add check if another block is received AND validated to stop mining
@@ -431,19 +432,27 @@ class node:
             print()
             print(colored("--End Completed a new block--", 'red'))
             print()
+            file = open(f"chain{self.id}.pkl", 'wb')
+            pickle.dump(self.blockchain.get_chain(), file)
 
             # broadcast the block
             t = Thread(target=self.broadcast_block, args=(self.current_block,))
             t.start()
 
-        self.blockchain_lock.release()       
+            # create a new block
+            # hash of the last block
+            previousHash = self.blockchain.get_block_hash(block_index=-1)
+            new_ind = self.blockchain.get_length()
+            self.current_block = block.Block(index=new_ind, previousHash=previousHash)
 
-        # create a new block
-        previousHash = self.current_block.hash
-        new_ind = self.blockchain.get_length()
-        self.current_block = block.Block(index=new_ind, previousHash=previousHash)
+        else:
+            # create a new block
+            # hash of the last block
+            previousHash = self.blockchain.get_block_hash(block_index=-1)
+            new_ind = self.blockchain.get_length()
+            self.current_block = block.Block(index=new_ind, previousHash=previousHash)
 
-
+        self.blockchain_lock.release()          
 
 
     def broadcast_block(self, the_block:block.Block):
@@ -460,7 +469,7 @@ class node:
     def validate_block(self, the_block:block.Block):
         if not self.blockchain.block_exists(the_block.index - 1):
             return False
-        if self.blockchain.get_block_hash(the_block.index - 1) != the_block.previousHash:
+        if self.blockchain.get_block_hash(-1) != the_block.previousHash:
             return False
 
         difficulty = self.blockchain.get_difficulty()
@@ -495,10 +504,12 @@ class node:
 
     def on_new_block_arrival(self, the_block:block.Block):
         self.blockchain_lock.acquire()
-
+        print()
+        print(colored("Received a foreign block", 'light_magenta'))
+        # print()
         if self.validate_block(the_block=the_block):
-            # if the received block is valid add it to the blockchain
             self.blockchain.add_block(the_block)
+            
             # stop mining
             self.do_mining = False
             # reset the transaction pool
@@ -506,8 +517,18 @@ class node:
             my_block_transactions = self.current_block.get_transactions()
             unverified_transactions = [t_dict for t_dict in my_block_transactions if t_dict not in received_block_transactions]
             for t_dict in unverified_transactions:
-                t = transaction.Transaction(init_dict=t_dict)
+                t = transaction.Transaction(sender_address=None, sender_private_key=None, recipient_address=None, value=None, transaction_inputs=None,init_dict=t_dict)
+                                            
                 self.transaction_pool.appendleft(t)
+            print()
+            print(colored("--Received valid block--", 'light_magenta'))
+            print()
+            print(colored(f"--Length of current Blockchain: {self.blockchain.get_length()}--", 'light_magenta'))
+            print()
+            print(colored("--End Received valid block--", 'light_magenta'))
+            print()
+            file = open(f"chain{self.id}.pkl", 'wb')
+            pickle.dump(self.blockchain.get_chain(), file)
         else:
             self.resolve_conflicts()
 
@@ -521,7 +542,7 @@ class node:
         for other_node in self.ring_dict.values():
             if other_node['id'] != self.id:
                 url = 'http://'+other_node["remote_ip"]+':'+other_node["remote_port"]+'/get_chain_length'
-                response = requests.post(url)
+                response = requests.get(url)
                 response_json = response.json()
                 print(response_json['length'])
                 length = response_json['length']
@@ -532,15 +553,15 @@ class node:
         return res
 
     def request_chain(self, other_node):
-        url = 'http://'+other_node["remote_ip"]+':'+other_node["remote_port"]+'/get_chain'
+        url = 'http://'+other_node["remote_ip"]+':'+other_node["remote_port"]+'/get_blockchain'
         response = requests.get(url)
-        new_blockchain = pickle.loads(response['blockchain'])
+        new_blockchain = pickle.loads(response.content)
         return new_blockchain
 
     def get_longest_valid_chain(self):
         lengths = self.request_chain_lengths()
         best_chain = self.blockchain
-        current_length = self.blockchain.get_length
+        current_length = self.blockchain.get_length()
         for (other_node, length) in lengths:
             if length < current_length: #self.blockchain is the longest valid chain
                 return self.blockchain
@@ -564,22 +585,23 @@ class node:
 
     #TODO find way to only send blocks after divergence of blockchain
     def resolve_conflicts(self):
-    	# resolve correct chain
+        res = self.request_chain_lengths()
+        print()
+        print(colored("--from resovle conflict--", 'light_magenta'))
+        for (a,b) in res:
+            print(colored(b, 'light_magenta'))
+        print()
+        print(colored("--End from resovle conflict--", 'light_magenta'))
+        return
 
-        # ask for the length of all other chains
-        for other_node in self.ring_dict.values():
-            if other_node['id'] != self.id:
-                # print(other_node)
-                url = 'http://'+other_node["remote_ip"]+':'+other_node["remote_port"]+'/get_chain_length'
-                response = requests.get(url)
-        
-    	
 
         # resolve correct chain
-
         #get longest chain
-        # new_chain = get_longest_valid_chain()
+        new_chain = self.get_longest_valid_chain()
         #adopt chain
-        # self.blockchain = new_chain
+        if self.blockchain == new_chain:
+            return
+        
+        self.blockchain = new_chain
 
         #TODO proccess transactions(oof)
