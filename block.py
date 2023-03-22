@@ -42,7 +42,7 @@ class Block:
                 "listOfTransactions": self.listOfTransactions,
                 "nonce": self.nonce,
                 "hash": self.hash
-                }
+            }
         return d
 
     def calc_hash(self):

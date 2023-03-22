@@ -46,6 +46,8 @@ class node:
 
         self.create_wallet(port=port)
 
+        self.miningThread = None
+
         self.blockchain = Blockchain()
 
         self.transaction_pool = deque() 
@@ -197,6 +199,7 @@ class node:
         while True:
             # self.current_block_lock.acquire()
             # fill up the current block
+            self.current_block_lock.acquire()
             while not self.current_block.is_filled():
                 if len(self.transaction_pool):
                     # if we have unused transactions put one of them to the block
@@ -205,14 +208,38 @@ class node:
                 else:
                     # take a short nap waiting for new transactions
                     time.sleep(0.1)
+            self.current_block_lock.release()
             self.do_mining = True
             self.mine_block()
 
             time.sleep(0.1)
 
+    # def mine(self,):
+    #     while True:
+    #         self.current_block_lock.acquire()
+    #         self.create_new_block()
+    #         # fill up the current block
+    #         while not self.current_block.is_filled():
+    #             self.transaction_pool_lock.acquire()
+    #             if(len(self.transaction_pool) >= self.current_block.capacity):
+    #                 # if we have enough transactions to fill the block fill it
+    #                 while(not self.current_block.is_filled()):
+    #                     t = self.transaction_pool.pop()
+    #                     self.add_transaction_to_block(t)
+    #                 self.transaction_pool_lock.release()                    
+    #             else:
+    #                 # else take a short nap waiting for new transactions
+    #                 self.transaction_pool_lock.release()
+    #                 time.sleep(0.1)
+    #         if self.do_mining:
+    #             self.mine_block()
+
+    #         time.sleep(0.1)
+    #         self.current_block_lock.release()
+
     def start_mining(self):
-        t = Thread(target=self.mine)
-        t.start()
+        self.miningThread = Thread(target=self.mine)
+        self.miningThread.start()
         return
 
 
@@ -503,7 +530,21 @@ class node:
         return True
 
     def on_new_block_arrival(self, the_block:block.Block):
+        # self.blockchain_lock.acquire()
+        # chain, who = self.get_longest_valid_chain()
+        # print()
+        # print(colored("--Received valid block--", 'light_magenta'))
+        # print()
+        # print(colored(f"--longest valid Blockchain belongs to {'me' if who=='me' else who['id']}, with length {chain.get_length()}--", 'light_magenta'))
+        # print()
+        # print(colored("--End Received valid block--", 'light_magenta'))
+        # print()
+        # self.blockchain_lock.release()
+        # return
+        
         self.blockchain_lock.acquire()
+        self.transaction_pool_lock.acquire()
+        self.current_block_lock.acquire()
         print()
         print(colored("Received a foreign block", 'light_magenta'))
         # print()
@@ -530,10 +571,13 @@ class node:
             file = open(f"chain{self.id}.pkl", 'wb')
             pickle.dump(self.blockchain.get_chain(), file)
         else:
+            self.do_mining = False
             self.resolve_conflicts()
 
         self.do_mining = True
         self.blockchain_lock.release()
+        self.transaction_pool_lock.release()
+        self.current_block_lock.release()
 
     def request_chain_lengths(self):
         #max_len = self.blockchain.get_length()
@@ -560,48 +604,96 @@ class node:
 
     def get_longest_valid_chain(self):
         lengths = self.request_chain_lengths()
-        best_chain = self.blockchain
+        best_chain = self.blockchain, "me"
         current_length = self.blockchain.get_length()
         for (other_node, length) in lengths:
-            if length < current_length: #self.blockchain is the longest valid chain
-                return self.blockchain
+            if length <= current_length: #self.blockchain is the longest valid chain
+                return self.blockchain, "me"
             candidate_chain = self.request_chain(other_node)
             if self.validate_chain(candidate_chain):
-                return candidate_chain
+                return candidate_chain, other_node
 
-        return self.blockchain  #if all others are invalid
+        return self.blockchain, "me"  #if all others are invalid
             
     # #concencus functions
 
     def validate_chain(self, chain):
-        #check for the longer chain accroose all nodes
-        blocks = chain.get_chain()[1:]
-        for b in blocks:
-            if not self.validate_block(b):
+        #check for the longer chain acrose all nodes
+        blocks = chain.get_chain()
+        for i in range(1,len(blocks)):
+            current_block_dict = blocks[i]
+            prev_block_dict = blocks[i-1]
+            if current_block_dict['previousHash'] != prev_block_dict['hash']:
                 return False
 
+            #may need to reconstruct a block to make sure calc_hash() function is correct
+            new_block = block.Block(current_block_dict['index'], previousHash=current_block_dict['previousHash'], capacity=current_block_dict['capacity'],
+                                    timestamp=current_block_dict['timestamp'])
+            new_block.set_nonce(current_block_dict['nonce'])
+            new_block.set_transactions(current_block_dict['listOfTransactions'])
+            new_block.calc_hash()
+            if current_block_dict['hash'] != new_block.hash:
+                return False
+            
+        # for b in blocks:
+        #     if not self.validate_block(b):
+        #         return False
+
         return True
+
+    def filter_transactions(self, new_chain:Blockchain):
+        current_chain = self.blockchain
+        new_chain_transactions, current_chain_transactions = [], []
+
+        # get all transactions (as dicts) from each chain
+        for bl in current_chain.get_chain():
+            for t in bl['listOfTransactions']:
+                current_chain_transactions.append(t)
+        for bl in new_chain.get_chain():
+            for t in bl['listOfTransactions']:
+                new_chain_transactions.append(t)
+
+        # convert Transactions from dict to class
+        current_chain_transactions = [Transaction(sender_address=None, sender_private_key=None, recipient_address=None, value=None, 
+                                                  transaction_inputs=None, init_dict=t) for t in current_chain_transactions]
+        new_chain_transactions = [Transaction(sender_address=None, sender_private_key=None, recipient_address=None, value=None, 
+                                                  transaction_inputs=None, init_dict=t) for t in new_chain_transactions]
+        current_chain_transactions = [t for t in current_chain_transactions if t not in new_chain_transactions]
+
+        
+        self.transaction_pool_lock.acquire()
+        current_transaction_pool = [t for t in self.transaction_pool if t not in new_chain_transactions]
+        for t in current_chain_transactions:
+            current_transaction_pool.append(t)
+        current_block_transactions = [Transaction(sender_address=None, sender_private_key=None, recipient_address=None, value=None, 
+                                                  transaction_inputs=None, init_dict=t) for t in self.current_block.listOfTransactions]
+        for t in current_block_transactions:
+            current_transaction_pool.append(t)
+        self.transaction_pool = deque(current_transaction_pool)
+        self.transaction_pool_lock.release()
+        
 
 
     #TODO find way to only send blocks after divergence of blockchain
     def resolve_conflicts(self):
-        res = self.request_chain_lengths()
-        print()
-        print(colored("--from resovle conflict--", 'light_magenta'))
-        for (a,b) in res:
-            print(colored(b, 'light_magenta'))
-        print()
-        print(colored("--End from resovle conflict--", 'light_magenta'))
-        return
-
-
         # resolve correct chain
         #get longest chain
-        new_chain = self.get_longest_valid_chain()
+        new_chain, who = self.get_longest_valid_chain()
+        print()
+        print(colored("--Received valid block--", 'light_magenta'))
+        print()
+        print(colored(f"--longest valid Blockchain belongs to {'me' if who=='me' else who['id']}, with length {new_chain.get_length()}--", 'light_magenta'))
+        print()
+        print(colored("--End Received valid block--", 'light_magenta'))
+        print()
         #adopt chain
-        if self.blockchain == new_chain:
+        if who == 'me':
             return
+        return
+        
+        # proccess transactions(oof)
+        self.filter_transactions(new_chain=new_chain)
         
         self.blockchain = new_chain
 
-        #TODO proccess transactions(oof)
+        
