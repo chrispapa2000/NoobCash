@@ -16,7 +16,7 @@ import pickle
 
 class Transaction:
 
-    def __init__(self, sender_address, sender_private_key, recipient_address, value, transaction_inputs):
+    def __init__(self, sender_address, sender_private_key, recipient_address, value, transaction_inputs, init_dict=None):
         ##set
         #self.sender_address: To public key του wallet από το οποίο προέρχονται τα χρήματα
         #self.receiver_address: To public key του wallet στο οποίο θα καταλήξουν τα χρήματα
@@ -25,6 +25,11 @@ class Transaction:
         #self.transaction_inputs: λίστα από Transaction Input 
         #self.transaction_outputs: λίστα από Transaction Output 
         #selfSignature
+
+        if init_dict:
+            # initialize from dictionary
+            self.from_dict(init_dict)
+            return
 
         self.sender_address = sender_address
         self.receiver_address = recipient_address
@@ -55,6 +60,15 @@ class Transaction:
             "transaction_outputs": self.transaction_outputs
         }
         return d
+    
+    def from_dict(self, init_dict):
+        self.sender_address = init_dict['sender_address']
+        self.receiver_address = init_dict['receiver_address']
+        self.amount = init_dict['amount']
+        self.transaction_id = init_dict['transaction_id']
+        self.signature = init_dict['signature']
+        self.transaction_inputs = init_dict['transaction_inputs']
+        self.transaction_outputs = init_dict['transaction_outputs']
     
 
     def set_transaction_outputs(self):
