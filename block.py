@@ -31,6 +31,7 @@ class Block:
         self.listOfTransactions = []
         #self.nonce = None
         #self.current_hash = None
+        self.difficulty = 1
 
     def to_dict(self):
         d = {

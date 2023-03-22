@@ -183,13 +183,28 @@ def get_block():
     # block_validation_thread.start()
     return jsonify("OK"), 200
 
-@app.route('/get_chain', methods=['POST'])
+@app.route('/get_chain', methods=['GET'])   #deprecated?
 def get_chain():
     f = request.files['chain_file']
     received_chain = pickle.loads(f.read())
     print(received_chain)
 
     # decide what to do with the received chain
+
+@app.route('/get_blockchain', methods=['GET'])
+def get_blockchain():
+    resp = {'blockchain':pickle.dumps(node.blockchain)}
+    return jsonify(resp), 200
+
+
+@app.route('/get_chain_length', methods=['GET'])
+def get_chain_length():
+    #f = request.files['length_file']
+    #print("got length")
+    #received_chain_length = f.read()
+    #print(received_chain_length)
+    resp = {'length':node.blockchain.get_length()}
+    return jsonify(resp), 200
 
 @app.route('/get_transaction_from_cli/<recipient_id>/<amount>', methods=['POST'])
 def get_transaction_from_cli(recipient_id, amount):
