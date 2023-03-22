@@ -17,6 +17,7 @@ from threading import Thread
 import time
 import random
 from termcolor import colored
+from threading import Event
 
 
 class node:
@@ -47,6 +48,7 @@ class node:
         self.create_wallet(port=port)
 
         self.miningThread = None
+        self.event = Event()
 
         self.blockchain = Blockchain()
 
@@ -163,7 +165,17 @@ class node:
         self.blockchain.set_chain(chain)
 
     def create_new_block(self, previousHash):
-        self.current_block = block.Block(previousHash=previousHash)
+        previousHash = self.blockchain.get_block_hash(block_index=-1)
+        new_ind = self.blockchain.get_length()
+        self.current_block = block.Block(index=new_ind, previousHash=previousHash)
+        while not self.current_block.is_filled():
+            if len(self.transaction_pool):
+                # if we have unused transactions put one of them to the block
+                t = self.transaction_pool.pop()
+                self.add_transaction_to_block(t)
+            else:
+                # take a short nap waiting for new transactions
+                time.sleep(0.1)
 
     def create_wallet(self, port):
         #create a wallet for this node, with a public key and a private key
@@ -214,31 +226,8 @@ class node:
 
             time.sleep(0.1)
 
-    # def mine(self,):
-    #     while True:
-    #         self.current_block_lock.acquire()
-    #         self.create_new_block()
-    #         # fill up the current block
-    #         while not self.current_block.is_filled():
-    #             self.transaction_pool_lock.acquire()
-    #             if(len(self.transaction_pool) >= self.current_block.capacity):
-    #                 # if we have enough transactions to fill the block fill it
-    #                 while(not self.current_block.is_filled()):
-    #                     t = self.transaction_pool.pop()
-    #                     self.add_transaction_to_block(t)
-    #                 self.transaction_pool_lock.release()                    
-    #             else:
-    #                 # else take a short nap waiting for new transactions
-    #                 self.transaction_pool_lock.release()
-    #                 time.sleep(0.1)
-    #         if self.do_mining:
-    #             self.mine_block()
-
-    #         time.sleep(0.1)
-    #         self.current_block_lock.release()
-
     def start_mining(self):
-        self.miningThread = Thread(target=self.mine)
+        self.miningThread = Thread(target=self.mine_block)
         self.miningThread.start()
         return
 
@@ -429,18 +418,88 @@ class node:
         #     self.mine_block()
 
 
+    # def mine_block(self):
+    #     #nonce = self.current_block.get_nonce()
+    #     difficulty = self.blockchain.get_difficulty()
+    #     proof  = '0'*difficulty
+    #     nonce = random.randint(0,1000000)
+    #     self.current_block.set_nonce(nonce=nonce)
+    #     self.current_block.calc_hash()
+    #     # mine to find the correct nonce
+    #     while str(self.current_block.hash)[:difficulty] != proof and self.do_mining:
+    #         #TODO add check if another block is received AND validated to stop mining
+    #         self.current_block.nonce += 1
+    #         self.current_block.calc_hash()
+
+    #     #nonce found for required proof
+    #     # lock the blockchain and check if the new block is still valid
+    #     self.blockchain_lock.acquire()
+
+    #     if self.validate_block(self.current_block):
+    #         self.blockchain.add_block(self.current_block)
+    #         # self.broadcast_block(self.current_block)
+    #         self.current_block.difficulty = difficulty
+
+    #         # print about the new block
+    #         print()
+    #         print(colored("--Completed a new block--", "red"))
+    #         print()
+    #         print(colored(f"current length of the blockchain: {len(self.blockchain.get_chain())}", 'red'))
+    #         print()
+    #         print(colored("--End Completed a new block--", 'red'))
+    #         print()
+    #         file = open(f"chain{self.id}.pkl", 'wb')
+    #         pickle.dump(self.blockchain.get_chain(), file)
+
+    #         # broadcast the block
+    #         t = Thread(target=self.broadcast_block, args=(self.current_block,))
+    #         t.start()
+
+    #         # create a new block
+    #         # hash of the last block
+    #         previousHash = self.blockchain.get_block_hash(block_index=-1)
+    #         new_ind = self.blockchain.get_length()
+    #         self.current_block = block.Block(index=new_ind, previousHash=previousHash)
+
+    #     else:
+    #         # create a new block
+    #         # hash of the last block
+    #         previousHash = self.blockchain.get_block_hash(block_index=-1)
+    #         new_ind = self.blockchain.get_length()
+    #         self.current_block = block.Block(index=new_ind, previousHash=previousHash)
+
+    #     self.blockchain_lock.release()          
+
     def mine_block(self):
+        if self.event.is_set():
+            return
+        
+        # fill up the block
+        self.create_new_block()
+
         #nonce = self.current_block.get_nonce()
         difficulty = self.blockchain.get_difficulty()
         proof  = '0'*difficulty
         nonce = random.randint(0,1000000)
         self.current_block.set_nonce(nonce=nonce)
         self.current_block.calc_hash()
+
+
         # mine to find the correct nonce
-        while str(self.current_block.hash)[:difficulty] != proof and self.do_mining:
+        while str(self.current_block.hash)[:difficulty] != proof and not(self.event.is_set()):
             #TODO add check if another block is received AND validated to stop mining
             self.current_block.nonce += 1
             self.current_block.calc_hash()
+
+        if self.event.is_set():
+            # first empty the block
+            self.transaction_pool_lock.acquire()
+            for t_dict in self.current_block.get_transactions:
+                t = Transaction(sender_address=None, recipient_address=None, sender_private_key=None, transaction_inputs=None,
+                                init_dict=t_dict)
+                self.transaction_pool.appendleft(t)
+            self.transaction_pool_lock.release()
+            return
 
         #nonce found for required proof
         # lock the blockchain and check if the new block is still valid
@@ -466,21 +525,10 @@ class node:
             t = Thread(target=self.broadcast_block, args=(self.current_block,))
             t.start()
 
-            # create a new block
-            # hash of the last block
-            previousHash = self.blockchain.get_block_hash(block_index=-1)
-            new_ind = self.blockchain.get_length()
-            self.current_block = block.Block(index=new_ind, previousHash=previousHash)
+        self.blockchain_lock.release()   
 
-        else:
-            # create a new block
-            # hash of the last block
-            previousHash = self.blockchain.get_block_hash(block_index=-1)
-            new_ind = self.blockchain.get_length()
-            self.current_block = block.Block(index=new_ind, previousHash=previousHash)
-
-        self.blockchain_lock.release()          
-
+        self.miningThread = Thread(target=self.mine_block)
+        self.miningThread.start()
 
     def broadcast_block(self, the_block:block.Block):
         """
@@ -541,10 +589,13 @@ class node:
         # print()
         # self.blockchain_lock.release()
         # return
+
+        # signal to mining thread
+        self.event.set()
+        self.miningThread.join()
         
         self.blockchain_lock.acquire()
-        self.transaction_pool_lock.acquire()
-        self.current_block_lock.acquire()
+
         print()
         print(colored("Received a foreign block", 'light_magenta'))
         # print()
@@ -552,7 +603,7 @@ class node:
             self.blockchain.add_block(the_block)
             
             # stop mining
-            self.do_mining = False
+            # self.do_mining = False
             # reset the transaction pool
             received_block_transactions = the_block.get_transactions()
             my_block_transactions = self.current_block.get_transactions()
@@ -571,13 +622,12 @@ class node:
             file = open(f"chain{self.id}.pkl", 'wb')
             pickle.dump(self.blockchain.get_chain(), file)
         else:
-            self.do_mining = False
+            # self.do_mining = False
             self.resolve_conflicts()
 
         self.do_mining = True
         self.blockchain_lock.release()
-        self.transaction_pool_lock.release()
-        self.current_block_lock.release()
+
 
     def request_chain_lengths(self):
         #max_len = self.blockchain.get_length()
