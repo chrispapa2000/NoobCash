@@ -381,9 +381,9 @@ class node:
         self.update_balance(trans_dict["receiver_address"], trans_dict["amount"])
 
 
-        
+
         self.transaction_pool.appendleft(received_transaction)
-        
+
 
         self.UTXO_lock.release()
         self.balances_lock.release()
@@ -420,6 +420,8 @@ class node:
 
         if self.validate_block(self.current_block):
             self.blockchain.add_block(self.current_block)
+            # self.broadcast_block(self.current_block)
+            self.current_block.difficulty = difficulty
 
             # print about the new block
             print()
@@ -490,7 +492,7 @@ class node:
             pass
 
         return True
-    
+
     def on_new_block_arrival(self, the_block:block.Block):
         self.blockchain_lock.acquire()
 
@@ -511,21 +513,56 @@ class node:
 
         self.do_mining = True
         self.blockchain_lock.release()
+
+    def request_chain_lengths(self):
+        #max_len = self.blockchain.get_length()
+        #best_node = self
+        lengths_list = []
+        for other_node in self.ring_dict.values():
+            if other_node['id'] != self.id:
+                url = 'http://'+other_node["remote_ip"]+':'+other_node["remote_port"]+'/get_chain_length'
+                response = requests.post(url)
+                response_json = response.json()
+                print(response_json['length'])
+                length = response_json['length']
+                lengths_list.append((other_node,length))
         
+        res = sorted(lengths_list, key = lambda x: x[1])
+        res.reverse()
+        return res
 
+    def request_chain(self, other_node):
+        url = 'http://'+other_node["remote_ip"]+':'+other_node["remote_port"]+'/get_chain'
+        response = requests.get(url)
+        new_blockchain = pickle.loads(response['blockchain'])
+        return new_blockchain
 
+    def get_longest_valid_chain(self):
+        lengths = self.request_chain_lengths()
+        best_chain = self.blockchain
+        current_length = self.blockchain.get_length
+        for (other_node, length) in lengths:
+            if length < current_length: #self.blockchain is the longest valid chain
+                return self.blockchain
+            candidate_chain = self.request_chain(other_node)
+            if self.validate_chain(candidate_chain):
+                return candidate_chain
 
-    # def valid_proof(.., difficulty=MINING_DIFFICULTY):
-    # 	pass
-
-
+        return self.blockchain  #if all others are invalid
+            
     # #concencus functions
 
-    # def valid_chain(self, chain):
-    # 	#check for the longer chain accroose all nodes
-    # 	pass
+    def validate_chain(self, chain):
+        #check for the longer chain accroose all nodes
+        blocks = chain.get_chain()[1:]
+        for b in blocks:
+            if not self.validate_block(b):
+                return False
+
+        return True
 
 
+    #TODO find way to only send blocks after divergence of blockchain
     def resolve_conflicts(self):
     	# resolve correct chain
 
@@ -538,5 +575,11 @@ class node:
         
     	
 
+        # resolve correct chain
 
+        #get longest chain
+        # new_chain = get_longest_valid_chain()
+        #adopt chain
+        # self.blockchain = new_chain
 
+        #TODO proccess transactions(oof)
