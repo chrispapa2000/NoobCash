@@ -17,15 +17,15 @@ def main():
     b1 = Blockchain()
     f = open('chain0.pkl', 'rb')
     b0.set_chain(pickle.load(f))
-    f = open('chain4.pkl', 'rb')
+    f = open('chain1.pkl', 'rb')
     b1.set_chain(pickle.load(f))
     for i in range(len(b0.get_chain())):
         print(b0.get_chain()[i]['listOfTransactions']==b1.get_chain()[i]['listOfTransactions'])
         print(b0.get_chain() == b1.get_chain())
     
     for i in range(len(b0.get_chain())):
-        print(f"length of block {0}", len(b0.get_chain()[i]['listOfTransactions']))
-        print(f"index of block {0}", b0.get_chain()[i]['index'])
+        print(f"length of block {i}", len(b0.get_chain()[i]['listOfTransactions']))
+        print(f"index of block {i}", b0.get_chain()[i]['index'])
     # print(len((b1.get_chain())))
 
 
