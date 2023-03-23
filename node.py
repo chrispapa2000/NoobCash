@@ -262,6 +262,7 @@ class node:
     def start_mining(self):
         self.miningThread = Thread(target=self.mine_block, args=(0,))
         time.sleep(1)
+        self.last_block_time = time.time()
         self.miningThread.start()
         t = Thread(target=self.check_mining)
         t.start()
@@ -513,6 +514,7 @@ class node:
         with self.miner_lock:
             # fill up the block            
             self.create_new_block(previousHash=previousHash)
+            start_time = time.time()
 
             #nonce = self.current_block.get_nonce()
             difficulty = self.blockchain.get_difficulty()
@@ -562,7 +564,7 @@ class node:
                     t = Transaction(sender_address=None, sender_private_key=None, recipient_address=None, value=None, 
                                                     transaction_inputs=None, init_dict=t_dict)
                     self.history.append(t)
-                self.block_times.append(end_time-self.last_block_time)
+                self.block_times.append(end_time-start_time)#-self.last_block_time)
                 self.last_block_time = end_time
                 # print about the new block
                 print()

@@ -15,7 +15,8 @@ def send_transactions(my_id, n_lines=100, basedir='5nodes'):
         ind+=1
         # print(id)
         # print(amount)
-        os.system(f"python3 client.py -n {my_id} -a t -r {id} -v {amount}")
+        ip = '10.0.0.'+str(my_id+1)
+        os.system(f"python3 client.py -n {my_id} -a t -r {id} -v {amount} -i {ip}")
         # time.sleep(0.1)
     end = time.time()  
     time_elapsed = end-start

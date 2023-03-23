@@ -1,13 +1,14 @@
 from argparse import ArgumentParser
 import requests
 
-def make_request(recipient_id, amount, port):
-    host = 'http://127.0.0.1:'+str(port)
+def make_request(recipient_id, amount, port, ip):
+    host = 'http://'+ip+':'+str(port)
     url = f"{host}/get_transaction_from_cli/{recipient_id}/{amount}"
     response = requests.post(url,)
 
 def main():
     parser = ArgumentParser()
+    parser.add_argument('-i', '--ip', required=True, help="The ip of the host")
     parser.add_argument('-n', '--node', required=True, help="The id of the node that we want to access")
     parser.add_argument('-a', '--action', choices=['t','view','balance'], help="The action to execute: 't' indicates that we want to do a transaction,\
                         'view' shows the transactions included in the last validated block and 'balance' shows your account's balance.")
@@ -28,7 +29,7 @@ def main():
                 return
             else:
                 id = int(args.recipient.replace("id",""))
-                make_request(recipient_id=id, amount=int(args.value), port=port)
+                make_request(recipient_id=id, amount=int(args.value), port=port,ip=args.ip)
         elif args.action == 'view':
             print("Action: view")
         elif args.action == 'balance':
