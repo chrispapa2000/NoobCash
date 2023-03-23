@@ -76,12 +76,12 @@ class Block:
     def set_transactions(self, transactions):
         self.listOfTransactions = transactions
 
-    def add_transaction(self, trans: transaction.Transaction, blkchain=None):
+    def add_transaction(self, trans_dict, blkchain=None):
         if self.is_filled():
             raise Exception("Block is filled. Adding transaction would exceed capacity.")
 
         #add a transaction to the block
-        self.listOfTransactions.append(trans.to_dict())
+        self.listOfTransactions.append(trans_dict)
 
     def is_filled(self):
         return len(self.listOfTransactions) >= self.capacity

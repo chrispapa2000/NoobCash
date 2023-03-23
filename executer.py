@@ -18,7 +18,7 @@ def send_transactions(my_id, n_lines=100, basedir='5nodes'):
         time.sleep(0.1)
 
 def main(my_id):
-    send_transactions(my_id, n_lines=100)
+    send_transactions(my_id, n_lines=20)
 
 if __name__ == '__main__':
     parser = ArgumentParser()

@@ -43,6 +43,10 @@ def participate(remote_ip, remote_port, n, e):
     resp = {"id":node.current_id_count}
     (my_n,my_e) = node.get_my_public_key_tuple()
     val = node.create_transaction(sender_address=(my_n,my_e), receiver_address=(int(n), int(e)), private_key=node.wallet.get_private_key(), value=100, do_broadcast=False)
+    # init_trans = node.transaction_pool.pop()
+    # new_trans = transaction.Transaction(sender_address=None, recipient_address=None, sender_private_key=None, value=None, transaction_inputs=None, init_dict=init_trans.to_dict())
+    # l = [init_trans.to_dict()]
+    # print("HERE: ", new_trans.to_dict() in l)
     # node.transaction_pool.appendleft(t)
     
     # print("received subscription request")
@@ -109,13 +113,13 @@ def get_initial_transactions():
     node.transaction_pool = pickle.loads(f.read())
 
     for t in node.transaction_pool:
-        outputs = t.transaction_outputs
+        outputs = t['transaction_outputs']
         for output in outputs:
             receiver = output['receiver_address']
             node.UTXOs[receiver].append(output)
 
     for t in node.transaction_pool:
-        inputs = t.transaction_inputs
+        inputs = t['transaction_inputs']
         for input in inputs:
             receiver = input['receiver_address']
             if input in node.UTXOs[receiver]:
@@ -161,6 +165,8 @@ def get_transaction():
     print()
     print(colored("length of transaction pool:", 'blue'))
     print(colored(len(node.transaction_pool), 'blue'))
+    print()
+    print(colored(f"current transaction count:{node.transaction_count}", 'blue'))
     print(colored("--Received Transaction End", 'blue'))
     print()
 
@@ -238,6 +244,7 @@ def get_transaction_from_cli(recipient_id, amount):
     print()
     print(colored("length of transaction pool:", 'green'))
     print(colored(len(node.transaction_pool), 'green'))
+    print(colored(f"current transaction count:{node.transaction_count}", 'green'))
     print(colored("--Creating transaction End--", 'green'))
     print()
     return jsonify("OK"), 200
