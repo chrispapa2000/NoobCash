@@ -96,7 +96,7 @@ class node:
         genesis_block = block.Block(previousHash=1,index=0)
 
         # add the first transaction to the block
-        genesis_block.add_transaction(t0)
+        genesis_block.add_transaction(t0.to_dict())
         genesis_block.set_nonce(0)
 
         # add the genesis block to the blockchain
@@ -424,15 +424,6 @@ class node:
 
     def add_transaction_to_block(self, transaction_dict: dict):
         self.current_block.add_transaction(transaction_dict)
-        # try:
-        #     self.current_block.add_transaction(trans)
-        # except:
-        #     pass
-
-        # #if enough transactions  mine
-        # if self.current_block.is_filled():
-        #     self.mine_block()
-
 
     # def mine_block(self):
     #     #nonce = self.current_block.get_nonce()
@@ -491,6 +482,7 @@ class node:
         #     return
         with self.miner_lock:
             # fill up the block
+            new_block_found = False
             self.create_new_block(previousHash=previousHash)
 
             #nonce = self.current_block.get_nonce()
@@ -502,7 +494,15 @@ class node:
 
 
             # mine to find the correct nonce
-            while str(self.current_block.hash)[:difficulty] != proof and not(self.event.is_set()):
+            while str(self.current_block.hash)[:difficulty] != proof:
+                if self.foreign_block_lock.locked():
+                    # empty block and return
+                    self.transaction_pool_lock.acquire()
+                    for t_dict in self.current_block.get_transactions():
+                        self.transaction_pool.appendleft(t_dict)
+                    self.transaction_pool_lock.release()
+                    return
+
                 #TODO add check if another block is received AND validated to stop mining
                 self.current_block.nonce += 1
                 self.current_block.calc_hash()
@@ -524,6 +524,7 @@ class node:
 
             if self.validate_block(self.current_block):
                 self.blockchain.add_block(self.current_block)
+                new_block_found = True
                 # self.broadcast_block(self.current_block)
                 self.current_block.difficulty = difficulty
 
@@ -544,7 +545,8 @@ class node:
                 pickle.dump(self.blockchain.get_chain(), file)
                 file.close()
 
-                # broadcast the block
+                # broadcast the block after clearing the event
+                self.event.clear()
                 t = Thread(target=self.broadcast_block, args=(self.current_block,))
                 t.start()
             else:
@@ -560,7 +562,9 @@ class node:
                 self.transaction_pool_lock.release()
 
             self.blockchain_lock.release()   
-
+        if new_block_found:
+            # if you found the new block wait for the broadcasting thread to signal
+            self.event.wait()
         self.miningThread = Thread(target=self.mine_block)
         self.miningThread.start()
 
@@ -573,6 +577,7 @@ class node:
                 url = 'http://'+other_node["remote_ip"]+':'+other_node["remote_port"]+'/get_block'
                 files = {'block_file' : pickle.dumps(the_block)}
                 response = requests.post(url, files=files)
+                self.event.set()
 
 
     def validate_block(self, the_block:block.Block):
@@ -675,7 +680,9 @@ class node:
             # self.event.clear()
             # self.miningThread = Thread(target=self.mine_block, args=(None,))
             # self.miningThread.start()
-
+        if not self.miningThread.is_alive():
+            self.miningThread = Thread(target=self.mine_block,)
+            self.miningThread.start()
         self.foreign_block_lock.release()
 
 

@@ -13,6 +13,7 @@ import os
 import pickle
 import threading
 from flask import Flask, make_response, send_file
+import time
 
 # global vars
 port = 0
@@ -25,6 +26,18 @@ CORS(app)
 
 
 #--- App Routes ---
+
+def start_everything():
+    time.sleep(0.5)
+
+    node.broadcast_participants()
+    
+    time.sleep(0.5)
+    
+    node.broadcast_blockchain()
+    node.broadcast_initial_transactions()
+    node.start_mining()
+    
 
 # route called in the bootstrap node to allow other nodes to participate
 @app.route('/participate/<remote_ip>/<remote_port>/<n>/<e>', methods=['POST'])
@@ -54,6 +67,9 @@ def participate(remote_ip, remote_port, n, e):
     # print("current ring:", node.ring_dict)
     # print()
 
+    if node.get_id_count() == number_of_nodes - 1:
+        t = threading.Thread(target=start_everything, )
+        t.start()
 
     # return response
     return jsonify(resp), 200
@@ -182,9 +198,9 @@ def get_block():
     # if node.validate_block(the_block=received_block):
     #     node.blockchain.add_block(received_block)
     #     print("inserted new block")
-
-    t = threading.Thread(target=node.on_new_block_arrival, args=(received_block,))
-    t.start()
+    node.on_new_block_arrival(the_block=received_block)
+    # t = threading.Thread(target=node.on_new_block_arrival, args=(received_block,))
+    # t.start()
 
     # decide what to do with the received block
     # block_validation_thread = threading.Thread(target=node.validate_block, args=(received_block,))
