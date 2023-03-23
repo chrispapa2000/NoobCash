@@ -140,6 +140,16 @@ class node:
                 files = {'initial_transactions_file': pickle.dumps(self.transaction_pool)}
                 response = requests.post(url, files=files)
 
+    def send_mining_start_request(self, url):
+        response = requests.get(url)
+
+    def notify_to_start_mining(self):
+        for other_node in self.ring_dict.values():
+            # if other_node['id'] != self.id:
+            if True:
+                url = 'http://'+other_node["remote_ip"]+':'+other_node["remote_port"]+'/start_mining'
+                t = Thread(target=self.send_mining_start_request, args=(url,))
+                t.start()
 
     def set_ring_dict(self, ring):
         self.ring_dict = ring
@@ -234,9 +244,24 @@ class node:
 
             time.sleep(0.1)
 
+    def check_mining(self):
+        while True:
+            if not self.miningThread.is_alive():
+                self.miningThread = Thread(target=self.mine_block)
+                self.miningThread.start()
+            else:
+                print()
+                print(colored("checked and Mining thread was alive", 'green', 'on_black'))
+                print()
+            time.sleep(0.5)
+
     def start_mining(self):
         self.miningThread = Thread(target=self.mine_block, args=(0,))
+        time.sleep(1)
         self.miningThread.start()
+        t = Thread(target=self.check_mining)
+        t.start()
+
         return
 
 
@@ -480,9 +505,9 @@ class node:
     def mine_block(self, previousHash=None):
         # if self.event.is_set():
         #     return
+        new_block_found = False
         with self.miner_lock:
-            # fill up the block
-            new_block_found = False
+            # fill up the block            
             self.create_new_block(previousHash=previousHash)
 
             #nonce = self.current_block.get_nonce()
@@ -565,6 +590,7 @@ class node:
         if new_block_found:
             # if you found the new block wait for the broadcasting thread to signal
             self.event.wait()
+            time.sleep(1)
         self.miningThread = Thread(target=self.mine_block)
         self.miningThread.start()
 
@@ -577,7 +603,8 @@ class node:
                 url = 'http://'+other_node["remote_ip"]+':'+other_node["remote_port"]+'/get_block'
                 files = {'block_file' : pickle.dumps(the_block)}
                 response = requests.post(url, files=files)
-                self.event.set()
+        time.sleep(1)
+        self.event.set()
 
 
     def validate_block(self, the_block:block.Block):
@@ -680,9 +707,9 @@ class node:
             # self.event.clear()
             # self.miningThread = Thread(target=self.mine_block, args=(None,))
             # self.miningThread.start()
-        if not self.miningThread.is_alive():
-            self.miningThread = Thread(target=self.mine_block,)
-            self.miningThread.start()
+        # if not self.miningThread.is_alive():
+        #     self.miningThread = Thread(target=self.mine_block,)
+        #     self.miningThread.start()
         self.foreign_block_lock.release()
 
 
@@ -801,3 +828,4 @@ class node:
         print()
 
         
+

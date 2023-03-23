@@ -15,7 +15,7 @@ def main():
     parser.add_argument('-v', '--value', required=False, help="The amount of NoobCash that the Transaction transfers to the recipient. Omly used if the action is 't'.")
     args = parser.parse_args()
     
-    ports = [5000, 6000, 7000, 8000, 9000]
+    ports = [i for i in range(5000, 6000, 100)]
     port = ports[int(args.node)]
 
     if not args.action in ['t','view','balance']:

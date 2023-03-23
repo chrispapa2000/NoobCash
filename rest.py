@@ -36,7 +36,10 @@ def start_everything():
     
     node.broadcast_blockchain()
     node.broadcast_initial_transactions()
-    node.start_mining()
+
+    node.notify_to_start_mining()
+    # time.sleep(0.5)
+    # node.start_mining()
     
 
 # route called in the bootstrap node to allow other nodes to participate
@@ -158,7 +161,8 @@ def get_initial_transactions():
 
     # start mining thread
     node.current_block = block.Block(index=1, previousHash=node.blockchain.get_block_hash(block_index=0))
-    node.start_mining()
+
+    # node.start_mining()
 
 
     return jsonify("OK"), 200
@@ -264,7 +268,12 @@ def get_transaction_from_cli(recipient_id, amount):
     print(colored("--Creating transaction End--", 'green'))
     print()
     return jsonify("OK"), 200
-    
+
+@app.route('/start_mining', methods=['GET'])
+def route_start_mining():
+    node.start_mining()
+    return jsonify("OK"), 200
+
 # get all transactions in the blockchain
 @app.route('/transactions/get', methods=['GET'])
 def get_transactions():
@@ -307,4 +316,5 @@ if __name__ == '__main__':
         node.request_participation()
 
     app.run(host=host, port=port)
+
 
