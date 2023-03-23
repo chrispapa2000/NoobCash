@@ -62,6 +62,10 @@ class node:
 
         self.history = []
 
+        self.block_times = []
+
+        self.last_block_time = time.time()
+
         # locks
         self.miner_lock = Lock()
         self.foreign_block_lock = Lock()
@@ -249,10 +253,10 @@ class node:
             if not self.miningThread.is_alive():
                 self.miningThread = Thread(target=self.mine_block)
                 self.miningThread.start()
-            else:
-                print()
-                print(colored("checked and Mining thread was alive", 'green', 'on_black'))
-                print()
+            # else:
+            #     print()
+            #     print(colored("checked and Mining thread was alive", 'green', 'on_black'))
+            #     print()
             time.sleep(0.5)
 
     def start_mining(self):
@@ -550,6 +554,7 @@ class node:
             if self.validate_block(self.current_block):
                 self.blockchain.add_block(self.current_block)
                 new_block_found = True
+                end_time = time.time()
                 # self.broadcast_block(self.current_block)
                 self.current_block.difficulty = difficulty
 
@@ -557,12 +562,15 @@ class node:
                     t = Transaction(sender_address=None, sender_private_key=None, recipient_address=None, value=None, 
                                                     transaction_inputs=None, init_dict=t_dict)
                     self.history.append(t)
-
+                self.block_times.append(end_time-self.last_block_time)
+                self.last_block_time = end_time
                 # print about the new block
                 print()
                 print(colored("--Completed a new block--", "red"))
                 print()
                 print(colored(f"current length of the blockchain: {len(self.blockchain.get_chain())}", 'red'))
+                print()
+                print(colored(f"running average of block time for this node: {sum(self.block_times)/len(self.block_times)}", 'red'))
                 print()
                 print(colored("--End Completed a new block--", 'red'))
                 print()

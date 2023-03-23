@@ -6,6 +6,7 @@ def send_transactions(my_id, n_lines=100, basedir='5nodes'):
     filename = f"transactions{my_id}.txt"
     f = open(f"{basedir}/{filename}", 'r')
     ind = 0
+    start=time.time()
     for line in f.readlines()[:n_lines]:
         id, amount = line.split(' ')
         id = id.replace('id', '')
@@ -15,10 +16,13 @@ def send_transactions(my_id, n_lines=100, basedir='5nodes'):
         # print(id)
         # print(amount)
         os.system(f"python3 client.py -n {my_id} -a t -r {id} -v {amount}")
-        time.sleep(0.1)
+        # time.sleep(0.1)
+    end = time.time()  
+    time_elapsed = end-start
+    print(f"time elapsed: {time_elapsed}, start: {start}, end: {end}")
 
 def main(my_id):
-    send_transactions(my_id, n_lines=20, basedir='10nodes')
+    send_transactions(my_id, n_lines=100, basedir='5nodes')
 
 if __name__ == '__main__':
     parser = ArgumentParser()
