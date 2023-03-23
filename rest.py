@@ -293,12 +293,16 @@ if __name__ == '__main__':
     from argparse import ArgumentParser
 
     parser = ArgumentParser()
+    #parser.add_argument('--ip', type=str, required=True, help='Node ip address.')
     parser.add_argument('-p', '--port', default=5000, type=int, help='port to listen on.')
+    parser.add_argument('-i', '--ip', type=str, help='Node ip address.')
     parser.add_argument('-b', '--bootstrap', default=0, type=int, help='a value of 1 indicates that this is the boostrap node.')
     parser.add_argument('-n', '--number_nodes', default=5, type=int, help='number of total nodes in the blockchain. Only used in bootstrap node.')
     args = parser.parse_args()
+
+    host = args.ip
     port = args.port
-    host = '127.0.0.1'
+    #host = '127.0.0.1'
 
     # only executed for bootstrap node
     if args.bootstrap == 1:

@@ -81,7 +81,7 @@ class node:
     def request_participation(self):
         # if you are not the bootstrap server, you request participation from the bootstrap server
         # make a get request
-        bootstrap_url = 'http://127.0.0.1:5000'
+        bootstrap_url = 'http://10.0.0.1:5000'
         # with app.app_context():
         # files = {'upload_file': open(f"personal_keys/public_{self.port}.pem",'rb')}
         (n,e) = self.get_my_public_key_tuple()
