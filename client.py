@@ -17,12 +17,19 @@ def make_view_request(port, ip):
     for item in response:
         print(f"{ind} : {item}")
 
+def make_balance_request(port, ip):
+    host = 'http://'+ip+':'+str(port)
+    url = f"{host}/balance"
+    response = requests.get(url,)
+    balance = response.json()['balance']
+    print(f"Your current balance: {balance}")
+
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument('-i', '--ip', help="The ip of the host")
+    parser.add_argument('-i', '--ip', help="The ip of the host that we want to access")
     parser.add_argument('-n', '--node', required=True, help="The id of the node that we want to access")
-    parser.add_argument('-a', '--action', choices=['t','view','balance'], help="The action to execute: 't' indicates that we want to do a transaction,\
+    parser.add_argument('-a', '--action', required='True', choices=['t','view','balance'], help="The action to execute: 't' indicates that we want to do a transaction,\
                         'view' shows the transactions included in the last validated block and 'balance' shows your account's balance.")
     parser.add_argument('-r', '--recipient', required=False, help="The id of the Transaction's recipient. Only used it the action is 't'.")
     parser.add_argument('-v', '--value', required=False, help="The amount of NoobCash that the Transaction transfers to the recipient. Omly used if the action is 't'.")
@@ -49,7 +56,8 @@ def main():
             make_view_request(port=port, ip=args.ip)
 
         elif args.action == 'balance':
-            print("Action: balance")
+            # print("Action: balance")
+            make_balance_request(port=port, ip=args.ip)
 
 if __name__=='__main__':
     main()

@@ -752,6 +752,12 @@ class node:
             amount = t_dict['amount']
             response.append({"sender" : self.get_id_by_pubkey(sender), "receiver": self.get_id_by_pubkey(receiver), "amount" : amount})
         return response
+    
+    def view_balance(self):
+        my_balance = 0
+        with self.balances_lock:
+            my_balance = self.ring_dict[self.get_pubkey_by_id(self.id)]['balance']
+        return my_balance
         
 
         

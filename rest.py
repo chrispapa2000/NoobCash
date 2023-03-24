@@ -233,6 +233,12 @@ def get_view_transactions():
     print(last_transactions)
     return jsonify({"last_transactions" : last_transactions}), 200
 
+@app.route('/balance', methods=['GET'])
+def get_view_balance():
+    balance = node.view_balance()
+    # print(balance)
+    return jsonify({"balance" : balance}), 200
+
 
 # run it once for every node
 if __name__ == '__main__':
