@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 import threading
 
 
-def send_transactions(my_id, event:threading.Event, n_lines=100, basedir='5nodes'):
+def send_transactions(my_id, event:threading.Event, n_lines=100, basedir='5nodes', vm=False):
     filename = f"transactions{my_id}.txt"
     f = open(f"{basedir}/{filename}", 'r')
     ind = 0
@@ -15,15 +15,14 @@ def send_transactions(my_id, event:threading.Event, n_lines=100, basedir='5nodes
         print(f"ID: {my_id} -> transaction {ind} (from:{my_id}, to:{id}, amount:{amount})")
         ind+=1
 
-        # ip = '10.0.0.'+str(my_id+1)
-        ip = '127.0.0.1'
+        ip = '10.0.0.'+str((my_id+1) % 6) if vm else '127.0.0.1'
 
 
         os.system(f"python3 client.py -n {my_id} -a t -r {id} -v {amount} -i {ip}")
     event.set()
     
 
-def main(count):
+def main(count, vm=False):
     n_lines = 10    
     if count == 5:
         e0 = threading.Event()
@@ -36,11 +35,11 @@ def main(count):
         e3.clear()
         e4 = threading.Event()
         e4.clear()
-        t0 = threading.Thread(target=send_transactions, args=(0, e0, n_lines,'5nodes'))
-        t1 = threading.Thread(target=send_transactions, args=(1, e1, n_lines,'5nodes'))
-        t2 = threading.Thread(target=send_transactions, args=(2, e2, n_lines,'5nodes'))
-        t3 = threading.Thread(target=send_transactions, args=(3, e3, n_lines,'5nodes'))
-        t4 = threading.Thread(target=send_transactions, args=(4, e4, n_lines,'5nodes'))
+        t0 = threading.Thread(target=send_transactions, args=(0, e0, n_lines,'5nodes', vm))
+        t1 = threading.Thread(target=send_transactions, args=(1, e1, n_lines,'5nodes', vm))
+        t2 = threading.Thread(target=send_transactions, args=(2, e2, n_lines,'5nodes', vm))
+        t3 = threading.Thread(target=send_transactions, args=(3, e3, n_lines,'5nodes', vm))
+        t4 = threading.Thread(target=send_transactions, args=(4, e4, n_lines,'5nodes', vm))
 
         start_time = time.time()
         
@@ -58,10 +57,33 @@ def main(count):
         print(f"time elapsed: {end_time-start_time} seconds")
 
     elif count == 10:
-        pass
+        # init an event for each thread 
+        events = [threading.Event() for _ in range(10)]
+        for i in range(10):
+            events[i].clear()
+        threads = [threading.Thread(target=send_transactions, args=(i, events[i], n_lines,'10nodes', vm)) for i in range(10)]
+
+        # start a timer 
+        start_time = time.time()
+        
+        # start all thread 
+        for i in range(10):
+            threads[i].start()
+        
+        # wait for all threads to finish
+        for e in events:
+            e.wait()
+
+        # stop the timer 
+        end_time = time.time()
+        print(f"time elapsed: {end_time-start_time} seconds")
 
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('-c', '--count', help="5 or 10 nodes mode")
+    parser.add_argument('-vm', '--vm', help="whether we are in vm environment")
     args = parser.parse_args()
-    main(int(args.count))
+    if not args.vm:
+        main(int(args.count))
+    else:
+        main(int(args.count), vm=True)

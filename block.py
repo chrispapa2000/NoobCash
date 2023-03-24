@@ -17,7 +17,7 @@ import binascii
 
 
 class Block:
-    def __init__(self, index, previousHash, capacity=1, timestamp = time.time()):
+    def __init__(self, index, previousHash, capacity=10, timestamp = time.time()):
         ##set
         #self.previousHash
         #self.timestamp

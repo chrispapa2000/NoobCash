@@ -21,7 +21,7 @@ from threading import Event
 
 
 class node:
-    def __init__(self, number_of_nodes, port, host, id=None):
+    def __init__(self, number_of_nodes, port, host, id=None, bootstrap_url='http://127.0.0.1:5000', difficulty=5, capacity=5):
         # self.NBC=100;
         ##set
 
@@ -50,7 +50,7 @@ class node:
         self.miningThread = None
         self.event = Event()
 
-        self.blockchain = Blockchain()
+        self.blockchain = Blockchain(block_capacity=capacity, difficulty=difficulty)
 
         self.transaction_pool = deque() 
 
@@ -65,6 +65,10 @@ class node:
         self.block_times = []
 
         self.last_block_time = time.time()
+
+        self.global_start_time = time.time()
+
+        node.bootstrap_url = bootstrap_url
 
         # locks
         self.miner_lock = Lock()
@@ -83,7 +87,7 @@ class node:
         # make a get request
 
         # bootstrap_url = 'http://10.0.0.1:5000'
-        bootstrap_url = 'http://127.0.0.1:5000'
+        bootstrap_url = node.bootstrap_url
 
         (n,e) = self.get_my_public_key_tuple()
         response = requests.post(f"{bootstrap_url}/participate/{self.host}/{self.port}/{n}/{e}")
@@ -187,11 +191,13 @@ class node:
     def create_new_block(self, previousHash):
         # initialized next block
         new_ind = None
+        capacity = None
         with self.blockchain_lock:  
             if not previousHash:
                 previousHash = self.blockchain.get_block_hash(block_index=-1)
             new_ind = self.blockchain.get_length()
-        self.current_block = block.Block(index=new_ind, previousHash=previousHash)
+            capacity = self.blockchain.get_block_capacity()
+        self.current_block = block.Block(index=new_ind, previousHash=previousHash, capacity=capacity)
 
         # fill it up with transactions
         with self.transaction_pool_lock:
@@ -272,6 +278,7 @@ class node:
     def start_mining(self):
         self.miningThread = Thread(target=self.mine_block, args=(0,))
         time.sleep(1)
+        self.global_start_time = time.time()
         self.last_block_time = time.time()
         self.miningThread.start()
         t = Thread(target=self.check_mining)
@@ -490,7 +497,7 @@ class node:
                     t = Transaction(sender_address=None, sender_private_key=None, recipient_address=None, value=None, 
                                                     transaction_inputs=None, init_dict=t_dict)
                     self.history.append(t)
-                self.block_times.append(end_time-start_time) #-self.last_block_time)
+                self.block_times.append(end_time-self.last_block_time)
                 self.last_block_time = end_time
                 # print about the new block
                 print()
@@ -499,6 +506,8 @@ class node:
                 print(colored(f"current length of the blockchain: {len(self.blockchain.get_chain())}", 'red'))
                 print()
                 print(colored(f"running average of block time for this node: {sum(self.block_times)/len(self.block_times)}", 'red'))
+                print()
+                print(colored(f"total elapsed time for this node: {time.time()-self.global_start_time}", 'red'))
                 print()
                 print(colored("--End Completed a new block--", 'red'))
                 print()
@@ -596,6 +605,9 @@ class node:
                                 break
                         if flag:
                             self.blockchain.add_block(the_block)
+                            end_time = time.time()
+                            self.block_times.append(end_time-self.last_block_time)
+                            self.last_block_time = end_time
                             for t_dict in received_block_transactions:
                                 self.transaction_pool.remove(t_dict)
                                 self.history.append(t_dict)
@@ -606,6 +618,10 @@ class node:
                         print(colored("--Received valid block--", 'light_magenta'))
                         print()
                         print(colored(f"--Length of current Blockchain: {self.blockchain.get_length()}--", 'light_magenta'))
+                        print()
+                        print(colored(f"running average of block time for this node: {sum(self.block_times)/len(self.block_times)}", 'light_magenta'))
+                        print()
+                        print(colored(f"total elapsed time for this node: {time.time()-self.global_start_time}", 'light_magenta'))
                         print()
                         print(colored("--End Received valid block--", 'light_magenta'))
                         print()
@@ -720,6 +736,10 @@ class node:
         print()
         print(colored(f"--longest valid Blockchain belongs to {'me' if who=='me' else who['id']}, with length {new_chain.get_length()}--", 'light_magenta'))
         print()
+        print(colored(f"running average of block time for this node: {sum(self.block_times)/len(self.block_times)}", 'light_magenta'))
+        print()
+        print(colored(f"total elapsed time for this node: {time.time()-self.global_start_time}", 'light_magenta'))
+        print()
         print(colored("--End Received invalid block--", 'light_magenta'))
         print()
         #adopt chain
@@ -730,11 +750,19 @@ class node:
         self.filter_transactions(new_chain=new_chain)
         
         self.blockchain = new_chain
+        # reset last block time 
+        self.last_block_time = time.time()
 
         print()
         print(colored("--Received invalid block--", 'light_magenta'))
         print()
         print(colored(f"--Replaced my chain with {'me' if who=='me' else who['id']}'s, with length {new_chain.get_length()}--", 'light_magenta'))
+        print()
+        print(colored(f"total elapsed time for this node: {time.time()-self.global_start_time}", 'light_magenta'))
+        print()
+        print(colored(f"running average of block time for this node: {sum(self.block_times)/len(self.block_times)}", 'light_magenta'))
+        print()
+        print(colored(f"total elapsed time for this node: {time.time()-self.global_start_time}", 'light_magenta'))
         print()
         print(colored("--End Received invalid block--", 'light_magenta'))
         print()

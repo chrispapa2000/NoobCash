@@ -7,7 +7,7 @@ import pickle
 import os
 
 class Blockchain():
-    def __init__(self, block_capacity=1, difficulty=5):
+    def __init__(self, block_capacity=10, difficulty=5):
         # initialize the list of blocks
         self.list_of_blocks = []
         self.block_capacity = block_capacity

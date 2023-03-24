@@ -250,6 +250,9 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--ip', type=str, help='Node ip address.')
     parser.add_argument('-b', '--bootstrap', default=0, type=int, help='a value of 1 indicates that this is the boostrap node.')
     parser.add_argument('-n', '--number_nodes', default=5, type=int, help='number of total nodes in the blockchain. Only used in bootstrap node.')
+    parser.add_argument('-vm', '--vm', help="indicates whether we are in vm mode")
+    parser.add_argument('-bc', '--block_capacity', help='block capacity')
+    parser.add_argument('-df', '--difficulty', help='difficulty')
     args = parser.parse_args()
 
     port = args.port
@@ -263,7 +266,8 @@ if __name__ == '__main__':
     # only executed for bootstrap node
     if args.bootstrap == 1:
         number_of_nodes = args.number_nodes
-        node = node.node(number_of_nodes=number_of_nodes, host=host, port=port, id=0)
+        node = node.node(number_of_nodes=number_of_nodes, host=host, port=port, id=0, bootstrap_url = 'http://10.0.0.1:5000' if args.vm else 'http://127.0.0.1:5000',
+                         capacity=int(args.block_capacity) if args.block_capacity else 5)
         # initialize block chain
         node.initialize_blockchain()
         node.register_node_to_ring(id=0, public_key=node.get_my_public_key_tuple(), remote_ip=host, remote_port=str(port), balance=100*number_of_nodes)
@@ -271,7 +275,8 @@ if __name__ == '__main__':
 
     # executed for all non-bootstrap nodes
     else:
-        node = node.node(number_of_nodes=number_of_nodes, host=host, port=port)   
+        node = node.node(number_of_nodes=number_of_nodes, host=host, port=port, bootstrap_url = 'http://10.0.0.1:5000' if args.vm else 'http://127.0.0.1:5000',
+                         capacity=int(args.block_capacity) if args.block_capacity else 5)
         # subscribe to the blockchain, by communicating with the bootstrap node
         node.request_participation()
 
