@@ -85,8 +85,6 @@ class node:
         # bootstrap_url = 'http://10.0.0.1:5000'
         bootstrap_url = 'http://127.0.0.1:5000'
 
-        # with app.app_context():
-        # files = {'upload_file': open(f"personal_keys/public_{self.port}.pem",'rb')}
         (n,e) = self.get_my_public_key_tuple()
         response = requests.post(f"{bootstrap_url}/participate/{self.host}/{self.port}/{n}/{e}")
         response_json = response.json()
@@ -120,13 +118,11 @@ class node:
         files = dict()
         files["ring"]=pickle.dumps(self.ring_dict) 
 
-        # files = {'file1': open('report.xls', 'rb'), 'file2': open('otherthing.txt', 'rb')}
         for other_node in self.ring_dict.values():
             if other_node['id'] != self.id:
                 print(other_node)
                 url = 'http://'+other_node["remote_ip"]+':'+other_node["remote_port"]+'/get_participants_info'
                 response = requests.post(url, files=files)
-        # self.ring_to_dict()
 
     # function that broadcasts the initial blockhain from the bootstrap node to the other nodes 
     def broadcast_blockchain(self):
@@ -134,10 +130,6 @@ class node:
             if other_node['id'] != self.id:
                 url = 'http://'+other_node["remote_ip"]+':'+other_node["remote_port"]+'/get_initial_blockchain'
                 blkchain = self.get_blockchain()
-                # print(blkchain.get_chain())
-                # print()
-                # self.get_blockchain().to_pickle(filename="blockschain.pkl")
-                # files = {'blockchain_file': open(f"pickles/blockchain.pkl",'rb')}
                 files = {'blockchain_file' : pickle.dumps(blkchain)}
                 response = requests.post(url, files=files)
 
@@ -245,7 +237,6 @@ class node:
                 'remote_port':remote_port,
                 'balance':balance
                 } 
-        # self.ring.append(new_node)
         self.ring_dict[(n,e)] = new_node
 
     def mine(self,):
@@ -273,10 +264,6 @@ class node:
             if not self.miningThread.is_alive():
                 self.miningThread = Thread(target=self.mine_block)
                 self.miningThread.start()
-            # else:
-            #     print()
-            #     print(colored("checked and Mining thread was alive", 'green', 'on_black'))
-            #     print()
             time.sleep(0.5)
 
     def start_mining(self):
@@ -303,10 +290,6 @@ class node:
         self.UTXO_lock.acquire()
         self.balances_lock.acquire()
         self.transaction_pool_lock.acquire()
-
-        # self.UTXO_lock.release()
-        # self.balances_lock.release()
-        # self.transaction_pool_lock.release()
 
         #check if we have enough money
         if self.ring_dict[sender_address]['balance'] < value:
@@ -345,11 +328,7 @@ class node:
             self.set_UTXOs(receiver, utxos)
 
 
-        # add to block
-        # self.current_block.add_transaction(trans)
-
         # update balances
-
         self.update_balance(sender_address, -value)
         self.update_balance(receiver_address, value)
 
@@ -360,13 +339,11 @@ class node:
         self.UTXO_lock.release()
         self.balances_lock.release()
         self.transaction_pool_lock.release()
-        # print("b")
 
         # broadcast
         if do_broadcast:
             self.broadcast_transaction(trans)
 
-        # print("c")
         return True
 
 
@@ -468,8 +445,6 @@ class node:
         self.current_block.add_transaction(transaction_dict)     
 
     def mine_block(self, previousHash=None):
-        # if self.event.is_set():
-        #     return
         new_block_found = False
         with self.miner_lock:
             # fill up the block            
@@ -479,7 +454,6 @@ class node:
                 return
             start_time = time.time()
 
-            #nonce = self.current_block.get_nonce()
             difficulty = self.blockchain.get_difficulty()
             proof  = '0'*difficulty
             nonce = random.randint(0,1000000)
@@ -497,7 +471,6 @@ class node:
                     self.transaction_pool_lock.release()
                     return
 
-                #TODO add check if another block is received AND validated to stop mining
                 self.current_block.nonce += 1
                 self.current_block.calc_hash()
 
@@ -508,14 +481,13 @@ class node:
                 self.blockchain.add_block(self.current_block)
                 new_block_found = True
                 end_time = time.time()
-                # self.broadcast_block(self.current_block)
                 self.current_block.difficulty = difficulty
 
                 for t_dict in self.current_block.get_transactions():
                     t = Transaction(sender_address=None, sender_private_key=None, recipient_address=None, value=None, 
                                                     transaction_inputs=None, init_dict=t_dict)
                     self.history.append(t)
-                self.block_times.append(end_time-start_time)#-self.last_block_time)
+                self.block_times.append(end_time-start_time) #-self.last_block_time)
                 self.last_block_time = end_time
                 # print about the new block
                 print()
@@ -540,8 +512,6 @@ class node:
 
                 # put some transactions back in the pool
                 for t_dict in self.current_block.get_transactions():
-                    # t = Transaction(sender_address=None, sender_private_key=None, recipient_address=None, value=None, 
-                    #                                   transaction_inputs=None, init_dict=t_dict)
                     if t_dict not in self.history:
                         self.transaction_pool.appendleft(t_dict)
 
@@ -613,9 +583,6 @@ class node:
 
                     if self.validate_block(the_block=the_block):
                         self.transaction_pool_lock.acquire()
-
-                        # for t_dict in the_block.get_transactions():
-                        #     self.history.append(t_dict)
                         
                         received_block_transactions = the_block.get_transactions() 
 
@@ -743,7 +710,7 @@ class node:
 
     def resolve_conflicts(self):
         # resolve correct chain
-        #get longest chain
+        # get longest chain
         new_chain, who = self.get_longest_valid_chain()
         print()
         print(colored("--Received invalid block--", 'light_magenta'))
