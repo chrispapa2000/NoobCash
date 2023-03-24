@@ -302,7 +302,7 @@ if __name__ == '__main__':
 
     host = args.ip
     port = args.port
-    #host = '127.0.0.1'
+    host = '127.0.0.1'
 
     # only executed for bootstrap node
     if args.bootstrap == 1:
