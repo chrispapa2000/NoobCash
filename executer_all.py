@@ -23,7 +23,7 @@ def send_transactions(my_id, event:threading.Event, n_lines=100, basedir='5nodes
     
 
 def main(count, vm=False):
-    n_lines = 10    
+    n_lines = 100    
     if count == 5:
         e0 = threading.Event()
         e0.clear()

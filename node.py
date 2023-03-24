@@ -466,7 +466,8 @@ class node:
 
             difficulty = self.blockchain.get_difficulty()
             proof  = '0'*difficulty
-            nonce = random.randint(0,1000000)
+            #nonce = random.randint(0,1000000)
+            nonce = self.id * 1000000 
             self.current_block.set_nonce(nonce=nonce)
             self.current_block.calc_hash()
 
@@ -508,6 +509,8 @@ class node:
                 print(colored(f"running average of block time for this node: {sum(self.block_times)/len(self.block_times)}", 'red'))
                 print()
                 print(colored(f"total elapsed time for this node: {time.time()-self.global_start_time}", 'red'))
+                print()
+                print(colored(f"transactions for this node: {self.transaction_count}", 'red'))
                 print()
                 print(colored("--End Completed a new block--", 'red'))
                 print()
