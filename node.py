@@ -510,6 +510,8 @@ class node:
                 print()
                 print(colored(f"total elapsed time for this node: {time.time()-self.global_start_time}", 'red'))
                 print()
+                print(colored(f"difficulty: {difficulty}", 'red'))
+                print()
                 print(colored(f"transactions for this node: {self.transaction_count}", 'red'))
                 print()
                 print(colored("--End Completed a new block--", 'red'))

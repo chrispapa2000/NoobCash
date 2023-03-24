@@ -267,7 +267,7 @@ if __name__ == '__main__':
     if args.bootstrap == 1:
         number_of_nodes = args.number_nodes
         node = node.node(number_of_nodes=number_of_nodes, host=host, port=port, id=0, bootstrap_url = 'http://10.0.0.1:5000' if args.vm else 'http://127.0.0.1:5000',
-                         capacity=int(args.block_capacity) if args.block_capacity else 5)
+                         capacity=int(args.block_capacity) if args.block_capacity else None, difficulty=int(args.difficulty) if args.difficulty else None)
         # initialize block chain
         node.initialize_blockchain()
         node.register_node_to_ring(id=0, public_key=node.get_my_public_key_tuple(), remote_ip=host, remote_port=str(port), balance=100*number_of_nodes)
@@ -276,7 +276,7 @@ if __name__ == '__main__':
     # executed for all non-bootstrap nodes
     else:
         node = node.node(number_of_nodes=number_of_nodes, host=host, port=port, bootstrap_url = 'http://10.0.0.1:5000' if args.vm else 'http://127.0.0.1:5000',
-                         capacity=int(args.block_capacity) if args.block_capacity else 5)
+                         capacity=int(args.block_capacity) if args.block_capacity else None, difficulty=int(args.difficulty) if args.difficulty else None)
         # subscribe to the blockchain, by communicating with the bootstrap node
         node.request_participation()
 
