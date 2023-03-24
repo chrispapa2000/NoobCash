@@ -24,6 +24,7 @@ def send_transactions(my_id, event:threading.Event, n_lines=100, basedir='5nodes
     
 
 def main(count):
+    n_lines = 10    
     if count == 5:
         e0 = threading.Event()
         e0.clear()
@@ -35,11 +36,11 @@ def main(count):
         e3.clear()
         e4 = threading.Event()
         e4.clear()
-        t0 = threading.Thread(target=send_transactions, args=(0, e0, 100,'5nodes'))
-        t1 = threading.Thread(target=send_transactions, args=(1, e1, 100,'5nodes'))
-        t2 = threading.Thread(target=send_transactions, args=(2, e2,100,'5nodes'))
-        t3 = threading.Thread(target=send_transactions, args=(3, e3, 100,'5nodes'))
-        t4 = threading.Thread(target=send_transactions, args=(4, e4, 100,'5nodes'))
+        t0 = threading.Thread(target=send_transactions, args=(0, e0, n_lines,'5nodes'))
+        t1 = threading.Thread(target=send_transactions, args=(1, e1, n_lines,'5nodes'))
+        t2 = threading.Thread(target=send_transactions, args=(2, e2, n_lines,'5nodes'))
+        t3 = threading.Thread(target=send_transactions, args=(3, e3, n_lines,'5nodes'))
+        t4 = threading.Thread(target=send_transactions, args=(4, e4, n_lines,'5nodes'))
 
         start_time = time.time()
         

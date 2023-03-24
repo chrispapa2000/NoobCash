@@ -121,6 +121,9 @@ def route_get_initial_blockchain():
     # f.save(f"tempdir/{f.filename}")
     # node.get_blockchain().from_pickle(f"{f.filename}", basedir="tempdir")
     node.blockchain = pickle.loads(f.read())
+    genesis_block = node.blockchain.get_chain()[0]
+    first_trans = genesis_block['listOfTransactions'][0]
+    node.history.append(first_trans)
     # print(node.get_blockchain().get_chain())
     return jsonify("OK"), 200
     # os.remove(f"tempdir/{f.filename}")
