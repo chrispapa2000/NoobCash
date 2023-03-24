@@ -225,6 +225,9 @@ class node:
         for key in self.ring_dict.keys():
             if self.ring_dict[key]['id'] == id:
                 return key
+            
+    def get_id_by_pubkey(self, key):
+        return self.ring_dict[key]['id']
 
     def register_node_to_ring(self, id, public_key, remote_ip, remote_port, balance=0):
         #add this node to the ring, only the bootstrap node can add a node to the ring after checking his wallet and ip:port address
@@ -735,6 +738,21 @@ class node:
         print()
         print(colored("--End Received invalid block--", 'light_magenta'))
         print()
+
+    def view_transactions(self):
+        chain = None
+        with self.blockchain_lock:
+            chain = self.blockchain.get_chain()
+
+        last_block = chain[-1]
+        response = list()
+        for t_dict in last_block['listOfTransactions']:
+            sender = t_dict['sender_address']
+            receiver = t_dict['receiver_address']
+            amount = t_dict['amount']
+            response.append({"sender" : self.get_id_by_pubkey(sender), "receiver": self.get_id_by_pubkey(receiver), "amount" : amount})
+        return response
+        
 
         
 

@@ -29,14 +29,11 @@ CORS(app)
 
 def start_everything():
     time.sleep(0.5)
-
     node.broadcast_participants()
     
-    time.sleep(0.5)
-    
+    time.sleep(0.5)    
     node.broadcast_blockchain()
     node.broadcast_initial_transactions()
-
     node.notify_to_start_mining()
 
     
@@ -229,6 +226,12 @@ def get_transactions():
 
     response = {'transactions': transactions}
     return jsonify(response), 200
+
+@app.route('/view_transactions', methods=['GET'])
+def get_view_transactions():
+    last_transactions = node.view_transactions()
+    print(last_transactions)
+    return jsonify({"last_transactions" : last_transactions}), 200
 
 
 # run it once for every node
