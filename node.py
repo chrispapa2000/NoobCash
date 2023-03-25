@@ -18,6 +18,7 @@ import time
 import random
 from termcolor import colored
 from threading import Event
+from threading import RLock
 
 
 class node:
@@ -73,7 +74,7 @@ class node:
         # locks
         self.miner_lock = Lock()
         self.foreign_block_lock = Lock()
-        self.transaction_pool_lock = Lock()
+        self.transaction_pool_lock = RLock()
         self.blockchain_lock = Lock()
         # self.current_block_lock = Lock()
         self.balances_lock = Lock() 
@@ -275,14 +276,38 @@ class node:
                 self.miningThread.start()
             time.sleep(0.5)
 
+    def send_transactions(self):
+        n_lines = 100
+        basedir = '10nodes' if len(self.ring_dict)==10 else '5nodes'
+        filename = f"transactions{self.id}.txt"
+        f = open(f"{basedir}/{filename}", 'r')
+
+        for line in f.readlines()[:n_lines]:
+            id, amount = line.split(' ')
+            id = id.replace('id', '')
+            amount=amount.replace('\n', '')
+            id, amount = int(id), int(amount)
+            recipient_key = self.get_pubkey_by_id(id)
+            my_key = self.get_pubkey_by_id(self.id)
+            flag = self.create_transaction(sender_address=my_key, receiver_address=recipient_key, private_key=self.wallet.get_private_key(), value=amount, do_broadcast=True)
+
+            # os.system(f"python3 client.py -n {my_id} -a t -r {id} -v {amount} -i {ip}")
+
+
     def start_mining(self):
         self.miningThread = Thread(target=self.mine_block, args=(0,))
         time.sleep(1)
         self.global_start_time = time.time()
-        self.last_block_time = time.time()
+        
         self.miningThread.start()
         t = Thread(target=self.check_mining)
         t.start()
+
+        time.sleep(5)
+
+        self.last_block_time = time.time()
+        t_transactions = Thread(target=self.send_transactions, )
+        t_transactions.start()
 
         return
 
@@ -404,52 +429,55 @@ class node:
             return False
 
     def validate_transaction(self, received_transaction: Transaction):
-        self.UTXO_lock.acquire()
-        self.balances_lock.acquire()
-        self.transaction_pool_lock.acquire()
+        # self.UTXO_lock.acquire()
+        # self.balances_lock.acquire()
+        # self.transaction_pool_lock.acquire()
+        with self.UTXO_lock:
+            with self.balances_lock:
+                with self.transaction_pool_lock:
 
 
-        if not self.verify_signature(received_transaction=received_transaction):
-            self.UTXO_lock.release()
-            self.balances_lock.release()
-            self.transaction_pool_lock.release()
-            return False
+                    if not self.verify_signature(received_transaction=received_transaction):
+                        # self.UTXO_lock.release()
+                        # self.balances_lock.release()
+                        # self.transaction_pool_lock.release()
+                        return False
 
-        # check NBCs balance
-        trans_dict = received_transaction.to_dict()
+                    # check NBCs balance
+                    trans_dict = received_transaction.to_dict()
 
-        trans_inputs = trans_dict["transaction_inputs"]
-        sender = trans_dict["sender_address"]
-        for item in trans_inputs:
-            if item not in self.get_UTXOs(sender):
-                self.UTXO_lock.release()
-                self.balances_lock.release()
-                self.transaction_pool_lock.release()
-                return False
+                    trans_inputs = trans_dict["transaction_inputs"]
+                    sender = trans_dict["sender_address"]
+                    for item in trans_inputs:
+                        if item not in self.get_UTXOs(sender):
+                            # self.UTXO_lock.release()
+                            # self.balances_lock.release()
+                            # self.transaction_pool_lock.release()
+                            return False
 
-        # update UTXOs 
-        senderUTXOs = self.UTXOs[sender]
-        senderUTXOs = [u for u in senderUTXOs if u not in trans_dict["transaction_inputs"]]
-        self.UTXOs[sender] = senderUTXOs
+                    # update UTXOs 
+                    senderUTXOs = self.UTXOs[sender]
+                    senderUTXOs = [u for u in senderUTXOs if u not in trans_dict["transaction_inputs"]]
+                    self.UTXOs[sender] = senderUTXOs
 
-        for output in trans_dict["transaction_outputs"]:
-            receiver = output['receiver_address']
-            self.UTXOs[receiver].append(output)
+                    for output in trans_dict["transaction_outputs"]:
+                        receiver = output['receiver_address']
+                        self.UTXOs[receiver].append(output)
 
-        #update balances
-        self.update_balance(trans_dict["sender_address"], -trans_dict["amount"])
-        self.update_balance(trans_dict["receiver_address"], trans_dict["amount"])
+                    #update balances
+                    self.update_balance(trans_dict["sender_address"], -trans_dict["amount"])
+                    self.update_balance(trans_dict["receiver_address"], trans_dict["amount"])
 
 
 
-        self.transaction_pool.appendleft(trans_dict)
-        self.transaction_count+=1   
+                    self.transaction_pool.appendleft(trans_dict)
+                    self.transaction_count+=1   
 
-        self.UTXO_lock.release()
-        self.balances_lock.release()
-        self.transaction_pool_lock.release()
-        
-        return True
+                    # self.UTXO_lock.release()
+                    # self.balances_lock.release()
+                    # self.transaction_pool_lock.release()
+                    
+                    return True
 
     def add_transaction_to_block(self, transaction_dict: dict):
         self.current_block.add_transaction(transaction_dict)     
@@ -678,10 +706,17 @@ class node:
     # #concencus functions
 
     def validate_chain(self, chain: Blockchain):
-        #check for the longer chain across all nodes
+        #check for the longest chain across all nodes
         blocks = chain.get_chain()
+        my_blocks = self.blockchain.get_chain()
         for i in range(1,len(blocks)):
             current_block_dict = blocks[i]
+
+            # same block as in my chain, doesn't need validation
+            if i <= len(my_blocks)-1:
+                if current_block_dict == my_blocks[i]:
+                    continue
+
             prev_block_dict = blocks[i-1]
             if current_block_dict['previousHash'] != prev_block_dict['hash']:
                 return False
@@ -706,6 +741,9 @@ class node:
                 current_known_transactions = current_transaction_pool + current_chain_transactions
                 for t_dict in current_block_dict['listOfTransactions']:
                     if t_dict not in current_known_transactions:
+                        # trans = Transaction(sender_address=None, recipient_address=None, sender_private_key=None, value=None, transaction_inputs=None,
+                        #                     init_dict=t_dict)
+                        # if not self.validate_transaction(received_transaction=trans):
                         return False
         return True
 
