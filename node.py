@@ -210,10 +210,10 @@ class node:
                     self.add_transaction_to_block(t_dict)
                 else:
                     # take a short nap waiting for new transactions
-                    if (time.time()-start_time) > 0.1:
-                        self.empty_block()
-                        return False
-                    time.sleep(0.1)
+                    # if (time.time()-start_time) > 0.1:
+                    self.empty_block()
+                    return False
+                    # time.sleep(0.1)
 
         return True
 
