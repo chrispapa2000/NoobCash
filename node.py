@@ -210,7 +210,7 @@ class node:
                     self.add_transaction_to_block(t_dict)
                 else:
                     # take a short nap waiting for new transactions
-                    if (time.time()-start_time) > 5:
+                    if (time.time()-start_time) > 0.1:
                         self.empty_block()
                         return False
                     time.sleep(0.1)
@@ -290,7 +290,21 @@ class node:
             recipient_key = self.get_pubkey_by_id(id)
             my_key = self.get_pubkey_by_id(self.id)
             flag = self.create_transaction(sender_address=my_key, receiver_address=recipient_key, private_key=self.wallet.get_private_key(), value=amount, do_broadcast=True)
-
+            if flag:
+                print()
+                print(colored("--Creating transaction--", 'green'))
+                print(colored(f"transaction from {self.id} to {id} with amount={amount}", 'green'))
+                print(colored("Current Balances:", 'green'))
+                for item in self.ring_dict.values():
+                    print(colored(f"id: {item['id']} has {item['balance']}", 'green'))
+                print(colored("length of UTXOs:", 'green'))
+                print(colored(len(self.UTXOs), 'green'))
+                print()
+                print(colored("length of transaction pool:", 'green'))
+                print(colored(len(self.transaction_pool), 'green'))
+                print(colored(f"current transaction count:{self.transaction_count}", 'green'))
+                print(colored("--Creating transaction End--", 'green'))
+                print()
             # os.system(f"python3 client.py -n {my_id} -a t -r {id} -v {amount} -i {ip}")
 
 
