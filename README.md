@@ -22,7 +22,7 @@ Start 9 other nodes executing the following for each one of them:
 
     python3 client.py --action t --node <sender_id> --recipient <recipient_id> --value <transaction_amount>
 
-## View transactions in the last blockchain block for a certain node
+## View transactions in the last blockchain block of a certain node
 
     python3 client.py --action view --node <node_id>
 
