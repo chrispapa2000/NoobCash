@@ -249,25 +249,25 @@ class node:
                 } 
         self.ring_dict[(n,e)] = new_node
 
-    def mine(self,):
-        while True:
-            # self.current_block_lock.acquire()
-            # fill up the current block
-            self.current_block_lock.acquire()
-            while not self.current_block.is_filled():
-                if len(self.transaction_pool) >= 0:
-                    # if we have unused transactions put one of them to the block
-                    t = self.transaction_pool.pop()
-                    self.add_transaction_to_block(t)
-                else:
-                    # take a short nap waiting for new transactions
-                    time.sleep(0.1)
-            self.current_block_lock.release()
-            self.do_mining = True
-            self.evemt.clear()
-            self.mine_block()
+    # def mine(self,):
+    #     while True:
+    #         # self.current_block_lock.acquire()
+    #         # fill up the current block
+    #         self.current_block_lock.acquire()
+    #         while not self.current_block.is_filled():
+    #             if len(self.transaction_pool) >= 0:
+    #                 # if we have unused transactions put one of them to the block
+    #                 t = self.transaction_pool.pop()
+    #                 self.add_transaction_to_block(t)
+    #             else:
+    #                 # take a short nap waiting for new transactions
+    #                 time.sleep(0.1)
+    #         self.current_block_lock.release()
+    #         self.do_mining = True
+    #         self.evemt.clear()
+    #         self.mine_block()
 
-            time.sleep(0.1)
+    #         time.sleep(0.1)
 
     def check_mining(self):
         while True:
@@ -322,9 +322,6 @@ class node:
         self.last_block_time = time.time()
         t_transactions = Thread(target=self.send_transactions, )
         t_transactions.start()
-
-        return
-
 
     def update_balance(self, public_key, amount):
         node_obj = self.ring_dict[public_key]
@@ -443,18 +440,12 @@ class node:
             return False
 
     def validate_transaction(self, received_transaction: Transaction):
-        # self.UTXO_lock.acquire()
-        # self.balances_lock.acquire()
-        # self.transaction_pool_lock.acquire()
         with self.UTXO_lock:
             with self.balances_lock:
                 with self.transaction_pool_lock:
 
 
                     if not self.verify_signature(received_transaction=received_transaction):
-                        # self.UTXO_lock.release()
-                        # self.balances_lock.release()
-                        # self.transaction_pool_lock.release()
                         return False
 
                     # check NBCs balance
@@ -464,9 +455,6 @@ class node:
                     sender = trans_dict["sender_address"]
                     for item in trans_inputs:
                         if item not in self.get_UTXOs(sender):
-                            # self.UTXO_lock.release()
-                            # self.balances_lock.release()
-                            # self.transaction_pool_lock.release()
                             return False
 
                     # update UTXOs 
@@ -486,10 +474,6 @@ class node:
 
                     self.transaction_pool.appendleft(trans_dict)
                     self.transaction_count+=1   
-
-                    # self.UTXO_lock.release()
-                    # self.balances_lock.release()
-                    # self.transaction_pool_lock.release()
                     
                     return True
 

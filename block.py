@@ -48,17 +48,10 @@ class Block:
     def calc_hash(self):
         #calculate self.hash
         block_list = [self.timestamp, [tr['transaction_id'] for tr in self.listOfTransactions], self.nonce, self.previousHash]
-        # print(block_list)
-        # return
-        # tmp = json.dumps(block_list)
-        tmp = str(block_list)
-        # self.hash = SHA.new(tmp.encode("ISO-8859-2")).hexdigest()
-        # self.hash = SHA.new(data=binascii.a2b_qp(tmp))
-        self.hash = hashlib.sha256(tmp.encode()).hexdigest()
-        # self.hash = hash(tmp)
-        # print(self.hash)
 
-        #self.hash = 1 # to be changed 
+        tmp = str(block_list)
+
+        self.hash = hashlib.sha256(tmp.encode()).hexdigest()
 
     #two blocks are equal if current hash is equal
     def __eq__(self, other):

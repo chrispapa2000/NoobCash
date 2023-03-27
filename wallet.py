@@ -16,30 +16,11 @@ class wallet:
 
 	def __init__(self, port=None):
 		# # generate an RSA key
-		# # export private key
-		# key = RSA.generate(2048)
-		# private_key = key.export_key()
-		# file_out = open(f"personal_keys/private_{port}.pem", 'wb')
-		# file_out.write(private_key)
-		# file_out.close()
-
-		# # export public key
-		# public_key = key.publickey().export_key()
-		# file_out = open(f"personal_keys/public_{port}.pem", "wb")
-		# file_out.write(public_key)
-		# file_out.close()
-		
-		# # keys as class attibutes
-		# self.public_key = key.public_key()
-		# self.private_key = key
-
 		# keys as numbers
 		key = RSA.generate(2048)
 		self.public_key_tuple = (key.n, key.e)
 		self.private_key_tuple = (key.n, key.e, key.d)
-		
-		#self_address
-		#self.transactions
+
 
 	# def balance():
 
@@ -61,8 +42,6 @@ class wallet:
 
 	def sign(self, port, data):
 		# get the key
-		# f = open(f"personal_keys/private_{port}.pem",'r')
-		# key = RSA.import_key(f.read())
 		key = RSA.construct(self.private_key_tuple)
 		
 		# signature object
