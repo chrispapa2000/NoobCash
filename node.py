@@ -320,8 +320,8 @@ class node:
         time.sleep(5)
 
         self.last_block_time = time.time()
-        t_transactions = Thread(target=self.send_transactions, )
-        t_transactions.start()
+        # t_transactions = Thread(target=self.send_transactions, )
+        # t_transactions.start()
 
     def update_balance(self, public_key, amount):
         node_obj = self.ring_dict[public_key]

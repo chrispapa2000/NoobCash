@@ -6,6 +6,11 @@ def make_transaction_request(recipient_id, amount, port, ip):
     host = 'http://'+ip+':'+str(port)
     url = f"{host}/get_transaction_from_cli/{recipient_id}/{amount}"
     response = requests.post(url,)
+    if response.json() == "OK":
+        print("transaction successful")
+    else:
+        print("There is not enough money for this transaction")
+    # print(response.json())
 
 def make_view_request(port, ip):
     host = 'http://'+ip+':'+str(port)
@@ -16,6 +21,7 @@ def make_view_request(port, ip):
     ind = 0
     for item in response:
         print(f"{ind} : {item}")
+        ind+=1
 
 def make_balance_request(port, ip):
     host = 'http://'+ip+':'+str(port)

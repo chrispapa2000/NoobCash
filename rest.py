@@ -196,7 +196,7 @@ def get_transaction_from_cli(recipient_id, amount):
     
     if not flag:
         # not enough money
-        return jsonify("OK"), 200
+        return jsonify("NOT OK"), 200
     
     print()
     print(colored("--Creating transaction--", 'green'))
